@@ -92,23 +92,23 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {recentLeads.map((lead, idx) => (
+                {(recentLeads || []).map((lead, idx) => (
                   <tr key={lead.id || idx} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-800">{lead.name}</span>
-                        <span className="text-xs text-gray-500">{lead.phone}</span>
+                        <span className="font-bold text-gray-800">{lead.name || 'New Lead'}</span>
+                        <span className="text-xs text-gray-500">{lead.phone || 'N/A'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{lead.company}</td>
-                    <td className="px-6 py-4 text-sm max-w-[150px] truncate">{lead.requirement}</td>
+                    <td className="px-6 py-4 text-sm">{lead.company || 'Private'}</td>
+                    <td className="px-6 py-4 text-sm max-w-[150px] truncate">{lead.requirement || 'Consultation Request'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
                         lead.status === 'new' ? 'bg-blue-100 text-blue-600' : 
                         lead.status === 'converted' ? 'bg-green-100 text-green-600' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {lead.status}
+                        {lead.status || 'new'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-xs text-gray-400">
@@ -116,6 +116,13 @@ const Dashboard = () => {
                     </td>
                   </tr>
                 ))}
+                {(!recentLeads || recentLeads.length === 0) && (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-10 text-center text-gray-400 text-sm">
+                      No recent leads found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
