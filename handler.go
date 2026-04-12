@@ -1,0 +1,596 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"askworx-whatsapp-bot/db"
+)
+
+type SessionState string
+
+const (
+	StateMain             SessionState = "main"
+	StateSolutions        SessionState = "solutions"
+	StateIndustrial       SessionState = "industrial"
+	StatePLC              SessionState = "plc"
+	StateSCADA            SessionState = "scada"
+	StateRobotics         SessionState = "robotics"
+	StateControlPanel     SessionState = "control_panel"
+	StateSoftware         SessionState = "software"
+	StateSoftwareSub      SessionState = "software_sub"
+	StateWhatsAppBot      SessionState = "whatsapp_bot"
+	StateAppDev           SessionState = "app_dev"
+	StateSEO              SessionState = "seo"
+	StateIIoT             SessionState = "iiot"
+	StateIIoTGateway      SessionState = "iiot_gateway"
+	StateCloudAnalytics   SessionState = "cloud_analytics"
+	StateQuote            SessionState = "quote"
+	StateQuoteName        SessionState = "quote_name"
+	StateQuoteCompany     SessionState = "quote_company"
+	StateQuoteRequirement SessionState = "quote_requirement"
+	StateQuotePhone       SessionState = "quote_phone"
+	StateExpert           SessionState = "expert"
+	StateCallback         SessionState = "callback"
+	StateAbout            SessionState = "about"
+	StateIndustries       SessionState = "industries"
+)
+
+var sessions = map[string]SessionState{}
+
+type TempQuote struct {
+	Name        string
+	Company     string
+	Requirement string
+	Phone       string
+}
+
+var tempQuotes = map[string]*TempQuote{}
+var tempCallbacks = map[string]string{}
+
+func handleMessage(phone, input string) {
+	text := strings.ToLower(strings.TrimSpace(input))
+	db.LogMessage(phone, "incoming", input)
+	db.SaveContact(phone)
+
+	// Global Command Overrides
+	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" {
+		sendOpeningMessage(phone)
+		return
+	}
+	if text == "help" {
+		sendHelpMessage(phone)
+		return
+	}
+	if text == "services" || text == "solutions" {
+		sendSolutionsMenu(phone)
+		return
+	}
+	if text == "contact" {
+		sendExpertContact(phone)
+		return
+	}
+	if text == "about" {
+		sendAboutASKworX(phone)
+		return
+	}
+	if text == "industries" {
+		sendIndustriesPage(phone)
+		return
+	}
+
+	state := sessions[phone]
+	if state == "" {
+		state = StateMain
+	}
+
+	switch state {
+	case StateMain:
+		handleMainFlow(phone, text)
+	case StateSolutions:
+		handleSolutionsFlow(phone, text)
+	case StateIndustrial:
+		handleIndustrialFlow(phone, text)
+	case StatePLC, StateSCADA, StateRobotics, StateControlPanel:
+		handleSubIndustrialFlow(phone, text)
+	case StateSoftware:
+		handleSoftwareFlow(phone, text)
+	case StateSoftwareSub, StateWhatsAppBot, StateAppDev, StateSEO:
+		handleSubSoftwareFlow(phone, text)
+	case StateIIoT:
+		handleIIoTFlow(phone, text)
+	case StateIIoTGateway, StateCloudAnalytics:
+		handleSubIIoTFlow(phone, text)
+	case StateQuoteName:
+		handleQuoteName(phone, input)
+	case StateQuoteCompany:
+		handleQuoteCompany(phone, input)
+	case StateQuoteRequirement:
+		handleQuoteRequirement(phone, input)
+	case StateQuotePhone:
+		handleQuotePhone(phone, input)
+	case StateExpert:
+		handleExpertFlow(phone, text)
+	case StateCallback:
+		handleCallbackRequest(phone, input)
+	case StateAbout:
+		handleAboutFlow(phone, text)
+	case StateIndustries:
+		handleIndustriesFlow(phone, text)
+	default:
+		sendOpeningMessage(phone)
+	}
+}
+
+// --- FLOW: OPENING ---
+func sendOpeningMessage(phone string) {
+	sessions[phone] = StateMain
+	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
+	body := "🏭 Welcome to ASKworX!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?"
+	buttons := []Button{
+		{ID: "our_solutions", Title: "🔧 Our Solutions"},
+		{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
+		{ID: "about_askworx", Title: "🏭 About ASKworX"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendHelpMessage(phone string) {
+	msg := "Available Commands:\n- HI/MENU: Main Menu\n- HELP: This list\n- SERVICES: Our Solutions\n- CONTACT: Talk to Expert\n- ABOUT: About Us\n- INDUSTRIES: Industry Experience"
+	sendTextMessage(phone, msg)
+}
+
+func handleMainFlow(phone, text string) {
+	switch text {
+	case "our_solutions":
+		sendSolutionsMenu(phone)
+	case "talk_to_expert":
+		sendExpertContact(phone)
+	case "about_askworx":
+		sendAboutASKworX(phone)
+	default:
+		sendOpeningMessage(phone)
+	}
+}
+
+// --- FLOW: SOLUTIONS ---
+func sendSolutionsMenu(phone string) {
+	sessions[phone] = StateSolutions
+	imageURL := "https://images.unsplash.com/photo-1565043666747-69f6646db940?w=800"
+	body := "🔧 Our Solutions\nEnd-to-end automation from ground to cloud.\nWhat are you looking for?"
+	buttons := []Button{
+		{ID: "industrial_auto", Title: "⚙️ Industrial Auto"},
+		{ID: "digital_software", Title: "💻 Digital & Software"},
+		{ID: "iiot_analytics", Title: "📊 IIoT & Analytics"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleSolutionsFlow(phone, text string) {
+	switch text {
+	case "industrial_auto":
+		sendIndustrialMenu(phone)
+	case "digital_software":
+		sendSoftwareMenu(phone)
+	case "iiot_analytics":
+		sendIIoTMenu(phone)
+	default:
+		sendSolutionsMenu(phone)
+	}
+}
+
+// --- FLOW: INDUSTRIAL ---
+func sendIndustrialMenu(phone string) {
+	sessions[phone] = StateIndustrial
+	imageURL := "https://images.unsplash.com/photo-1625134673337-519d4d10b313?w=800"
+	body := "⚙️ Industrial Automation\nThe Foundation: Total Control at Machine Level\n\nWe design, build and commission complete automation systems built for 24/7 industrial operations.\n\nSelect a service to learn more:"
+	buttons := []Button{
+		{ID: "plc_control", Title: "⚡ PLC & Control"},
+		{ID: "scada_hmi", Title: "🖥️ SCADA & HMI"},
+		{ID: "robotics", Title: "🤖 Robotics"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleIndustrialFlow(phone, text string) {
+	switch text {
+	case "plc_control":
+		sendPLCDetails(phone)
+	case "scada_hmi":
+		sendSCADADetails(phone)
+	case "robotics":
+		sendRoboticsDetails(phone)
+	default:
+		sendIndustrialMenu(phone)
+	}
+}
+
+func sendPLCDetails(phone string) {
+	sessions[phone] = StatePLC
+	imageURL := "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800"
+	body := "⚡ PLC & Control Systems\nComplete programmable control solutions for your plant floor.\n\n✅ Micro & Modular PLCs\n✅ Motion Controllers\n✅ Integrated PLC/HMI units\n✅ Variable Frequency Inverters (VFDs)\n✅ AC Servo Drive Systems\n✅ High-speed precision control\n✅ Safety PLC systems\n✅ Redundant control architecture\n\n🎯 Industries served:\nAutomotive | Pharma | Food & Beverage | Packaging | EV & Battery\n\n📞 Contact us for a free consultation and custom quote."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "next_to_scada", Title: "⏭️ Next Service"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendSCADADetails(phone string) {
+	sessions[phone] = StateSCADA
+	imageURL := "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800"
+	body := "🖥️ SCADA & HMI Development\nVisualize and control your entire operation from one screen.\n\n✅ Complete SCADA system development\n✅ MC Works64 & industry-standard platforms\n✅ HMI design for intuitive process control\n✅ Real-time monitoring & alarming\n✅ Historical data logging & trending\n✅ Multi-site remote monitoring\n✅ Custom reporting & dashboards\n✅ Mobile access to your plant data\n\n📊 Result: Complete plant visibility in real-time\n\n📞 Contact us for a free consultation and custom quote."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "next_to_robotics", Title: "⏭️ Next Service"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendRoboticsDetails(phone string) {
+	sessions[phone] = StateRobotics
+	imageURL := "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800"
+	body := "🤖 Industrial Robotics & Motion\nThe Vanguard: Integrating Advanced Robotics\n\nTurnkey robot integration for modern manufacturing.\n\n✅ High-speed industrial robots\n✅ Collaborative Robots (Cobots)\n✅ Assembly & welding automation\n✅ Material handling systems\n✅ Precision multi-axis motion control\n✅ Vision-guided robotic systems\n✅ Robot programming & commissioning\n✅ After-sales support & training\n\n🎯 Applications:\nAssembly | Welding | Pick & Place | Inspection | Palletizing\n\n📞 Contact us for a free consultation and custom quote."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "next_to_panels", Title: "⏭️ Control Panels"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendPanelDetails(phone string) {
+	sessions[phone] = StateControlPanel
+	imageURL := "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
+	body := "🔌 Control Panel Design & Engineering\nThe Powerhouse: Reliable System Architecture\n\nIEC 61439 standard control panels built for reliability.\n\n✅ Complete panel architecture design\n✅ IEC 61439 international standard\n✅ Low-voltage circuit breakers & contactors\n✅ Motor starters & protection relays\n✅ Power Management Meters\n✅ Energy saving devices\n✅ Full documentation & testing\n✅ FAT & SAT support\n\n🏆 Built for 24/7 industrial operations\n\n📞 Contact us for a free consultation and custom quote."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "back_to_solutions", Title: "🔙 Back to Solutions"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleSubIndustrialFlow(phone, text string) {
+	switch text {
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	case "next_to_scada":
+		sendSCADADetails(phone)
+	case "next_to_robotics":
+		sendRoboticsDetails(phone)
+	case "next_to_panels":
+		sendPanelDetails(phone)
+	case "back_to_solutions":
+		sendSolutionsMenu(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendIndustrialMenu(phone)
+	}
+}
+
+// --- FLOW: SOFTWARE ---
+func sendSoftwareMenu(phone string) {
+	sessions[phone] = StateSoftware
+	imageURL := "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800"
+	body := "💻 Digital & Software Solutions\nBridging traditional automation with modern digital thinking to scale your business.\n\nFrom automated customer engagement to full-scale enterprise software, we engineer tools that drive growth."
+	buttons := []Button{
+		{ID: "software_solutions", Title: "💻 Software Solutions"},
+		{ID: "seo_marketing", Title: "📈 SEO & Marketing"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleSoftwareFlow(phone, text string) {
+	switch text {
+	case "software_solutions":
+		sendSoftwareSolutionMenu(phone)
+	case "seo_marketing":
+		sendSEODetails(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendSoftwareMenu(phone)
+	}
+}
+
+func sendSoftwareSolutionMenu(phone string) {
+	sessions[phone] = StateSoftwareSub
+	imageURL := "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800"
+	body := "💻 Software Solutions\nCustom-engineered software systems to automate and scale your business operations.\n\nSelect a specialized solution:"
+	buttons := []Button{
+		{ID: "whatsapp_bot", Title: "📱 WhatsApp Bots"},
+		{ID: "web_app_dev", Title: "🌐 Web & App Dev"},
+		{ID: "industrial_sw", Title: "⚙️ Industrial Software"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendWhatsAppBotDetails(phone string) {
+	sessions[phone] = StateWhatsAppBot
+	imageURL := "https://images.unsplash.com/photo-1611746872915-64382b5c76da?w=800"
+	body := "📱 WhatsApp Business Automation\nTransform your Customer Experience with 24/7 Intelligent Automation.\n\n✅ AI-Powered Conversation Flows\n✅ Full CRM & Database Integration\n✅ Automated Lead Qualification\n✅ Order Tracking & Payments\n✅ Multi-agent Admin Dashboard\n✅ Direct Broadcast Management\n\nScale your sales and support without adding headcount."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "web_app_dev", Title: "🌐 Web & App Dev"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendWebAppDetails(phone string) {
+	sessions[phone] = StateAppDev
+	imageURL := "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800"
+	body := "🌐 Web & Mobile Portfolio\nEnterprise-grade digital products designed for high performance.\n\n✅ Progressive Web Apps (PWA)\n✅ High-Speed Corporate Websites\n✅ Mobile Apps (Flutter, React Native)\n✅ Headless CMS Solutions\n✅ Serverless API Architecture\n✅ AWS/GCP Cloud Deployment\n\nBuilt for speed, security, and extreme scalability. 🚀"
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "industrial_sw", Title: "⚙️ Industrial Software"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendIndustrialSoftwareDetails(phone string) {
+	sessions[phone] = StateSoftware
+	imageURL := "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800"
+	body := "⚙️ Industrial & ERP Software\nRobust backend systems to manage your shop floor and business.\n\n✅ Custom ERP & MES Systems\n✅ Real-time Inventory Tracking\n✅ Shop-floor Data Logging\n✅ Predictive Analytics Engines\n✅ Secure Cloud Dashboards\n✅ Desktop Process Monitors\n\nBridging the gap between machinery and business intelligence."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "seo_marketing", Title: "📈 Digital Marketing"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendSEODetails(phone string) {
+	sessions[phone] = StateSEO
+	imageURL := "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"
+	body := "📈 Digital Marketing & SEO\nDominating search results and driving high-intent traffic.\n\n✅ Data-Driven SEO Strategies\n✅ ROI-Focused Google Ads (PPC)\n✅ LinkedIn B2B Lead Generation\n✅ Social Media Brand Positioning\n✅ Content Authority Building\n✅ Advanced Analytics & Tracking\n\nWe don't just get traffic; we get paying customers."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "back_to_software", Title: "🔙 Software Menu"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleSubSoftwareFlow(phone, text string) {
+	switch text {
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	case "whatsapp_bot":
+		sendWhatsAppBotDetails(phone)
+	case "web_app_dev":
+		sendWebAppDetails(phone)
+	case "industrial_sw":
+		sendIndustrialSoftwareDetails(phone)
+	case "seo_marketing":
+		sendSEODetails(phone)
+	case "back_to_software":
+		sendSoftwareSolutionMenu(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendSoftwareSolutionMenu(phone)
+	}
+}
+
+// --- FLOW: IIoT ---
+func sendIIoTMenu(phone string) {
+	sessions[phone] = StateIIoT
+	imageURL := "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800"
+	body := "📊 IIoT & Analytics Solutions\nConnecting your plant to the cloud.\n\nSelect a service:"
+	buttons := []Button{
+		{ID: "iiot_gateway", Title: "🌐 IIoT Gateway"},
+		{ID: "cloud_analytics", Title: "☁️ Cloud Analytics"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleIIoTFlow(phone, text string) {
+	switch text {
+	case "iiot_gateway":
+		sendIIoTGatewayDetails(phone)
+	case "cloud_analytics":
+		sendCloudAnalyticsDetails(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendIIoTMenu(phone)
+	}
+}
+
+func sendIIoTGatewayDetails(phone string) {
+	sessions[phone] = StateIIoTGateway
+	imageURL := "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800"
+	body := "🌐 IIoT Gateway Solutions\nThe Bridge: Connecting Your Plant to the Cloud\n\n✅ Industrial IoT gateway deployment\n✅ Machine-to-cloud connectivity\n✅ OPC-UA, Modbus, MQTT protocols\n✅ Secure encrypted data transfer\n✅ Edge computing solutions\n\n📞 Contact us for a free consultation."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "next_to_analytics", Title: "⏭️ Cloud Analytics"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func sendCloudAnalyticsDetails(phone string) {
+	sessions[phone] = StateCloudAnalytics
+	imageURL := "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800"
+	body := "☁️ Cloud Insights & Analytics\nTransforming Data into Operational Intelligence\n\n✅ Real-time production dashboards\n✅ OEE tracking & reporting\n✅ Predictive maintenance alerts\n✅ Energy consumption monitoring\n\n📊 Our customers achieve 99.9% visibility."
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "back_to_solutions", Title: "🔙 Back to Solutions"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleSubIIoTFlow(phone, text string) {
+	switch text {
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	case "next_to_analytics":
+		sendCloudAnalyticsDetails(phone)
+	case "back_to_solutions":
+		sendSolutionsMenu(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendIIoTMenu(phone)
+	}
+}
+
+// --- FLOW: QUOTE (MULTI-STEP) ---
+func startQuoteFlow(phone string) {
+	sessions[phone] = StateQuoteName
+	tempQuotes[phone] = &TempQuote{}
+	body := "💬 Free Consultation Request\nOur experts will analyze your requirements and provide a detailed proposal within 24 hours. 🎯\n\nPlease share your *full name*:"
+	sendTextMessage(phone, body)
+}
+
+func handleQuoteName(phone, input string) {
+	// If input looks like a button ID (contains underscore), ignore it for name
+	if strings.Contains(input, "_") {
+		return 
+	}
+	tempQuotes[phone].Name = input
+	sessions[phone] = StateQuoteCompany
+	msg := fmt.Sprintf("👋 Hello %s!\n\n🏢 What is your *company name* and *industry*?\n\nExample: ABC Manufacturing, Automotive", input)
+	sendTextMessage(phone, msg)
+}
+
+func handleQuoteCompany(phone, input string) {
+	tempQuotes[phone].Company = input
+	sessions[phone] = StateQuoteRequirement
+	msg := "📋 Briefly describe your *requirement*:\n\nExample:\n\"Need PLC automation for 3 production lines\"\n\"Want WhatsApp bot for our hotel\""
+	sendTextMessage(phone, msg)
+}
+
+func handleQuoteRequirement(phone, input string) {
+	tempQuotes[phone].Requirement = input
+	sessions[phone] = StateQuotePhone
+	msg := "📞 Your *best contact number*?\n(Our expert will call within 24 hours)"
+	sendTextMessage(phone, msg)
+}
+
+func handleQuotePhone(phone, input string) {
+	t := tempQuotes[phone]
+	t.Phone = input
+
+	fmt.Printf("📝 Saving Lead for %s: %s\n", t.Name, t.Phone)
+	err := db.CreateLead(phone, t.Name, t.Company, t.Requirement, t.Phone)
+	if err != nil {
+		fmt.Printf("❌ Database Error: %v\n", err)
+	}
+	db.UpdateContactName(phone, t.Name)
+	db.UpdateContactCompany(phone, t.Company)
+
+	sessions[phone] = StateMain
+	body := fmt.Sprintf("✅ Request Received Successfully!\n🎉 Thank you %s!\n\n📋 Summary:\n👤 Name: %s\n🏢 Company: %s\n📝 Requirement: %s\n📞 Contact: %s\n\n⏰ Our expert will contact you within 24 hours with a detailed proposal.\n\nThank you for choosing ASKworX! 🙏", t.Name, t.Name, t.Company, t.Requirement, t.Phone)
+	sendTextMessage(phone, body)
+
+	delete(tempQuotes, phone)
+	sendOpeningMessage(phone)
+}
+
+// --- FLOW: EXPERT / CALLBACK ---
+func sendExpertContact(phone string) {
+	sessions[phone] = StateExpert
+	imageURL := "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800"
+	body := "📞 Talk to Our Expert\nOur team of automation engineers is ready to help you find the right solution.\n\n☎︎ Call: +91 9187458714\n📧 Email: contact@askworx.in\n🌐 Website: www.askworx.in\n⚲ Address: RR Nagar, Bangalore\n\nOr let us call you back!"
+	buttons := []Button{
+		{ID: "request_callback", Title: "📋 Request Callback"},
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleExpertFlow(phone, text string) {
+	switch text {
+	case "request_callback":
+		startCallbackFlow(phone)
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendExpertContact(phone)
+	}
+}
+
+func startCallbackFlow(phone string) {
+	sessions[phone] = StateCallback
+	body := "📞 Schedule a Callback\nPlease share your *name* and *preferred time*:\n\nFormat: Name, Time\nExample: Rahul Sharma, Tomorrow 3PM"
+	sendTextMessage(phone, body)
+}
+
+func handleCallbackRequest(phone, input string) {
+	parts := strings.Split(input, ",")
+	name := input
+	timeStr := "As soon as possible"
+	if len(parts) >= 2 {
+		name = strings.TrimSpace(parts[0])
+		timeStr = strings.TrimSpace(parts[1])
+	}
+
+	db.CreateCallback(phone, name, timeStr)
+	sessions[phone] = StateMain
+	body := "✅ Callback Scheduled!\nOur expert will call you at the requested time.\n\n📞 We will call from: +91 9187458714\n\nThank you for choosing ASKworX! 🙏\nType MENU anytime for assistance."
+	sendTextMessage(phone, body)
+	sendOpeningMessage(phone)
+}
+
+// --- FLOW: ABOUT / INDUSTRIES ---
+func sendAboutASKworX(phone string) {
+	sessions[phone] = StateAbout
+	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
+	body := "🏭 About ASKworX Smart Automation LLP\nGround to Cloud — Engineering Smart Automation\n\nAt ASKworX, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +91 9187458714\n📧 contact@askworx.in\n🌐 www.askworx.in"
+	buttons := []Button{
+		{ID: "our_industries", Title: "🏭 Our Industries"},
+		{ID: "our_solutions", Title: "🔧 Our Solutions"},
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+	}
+	sendImageWithButtons(phone, imageURL, body, buttons)
+}
+
+func handleAboutFlow(phone, text string) {
+	switch text {
+	case "our_industries":
+		sendIndustriesPage(phone)
+	case "our_solutions":
+		sendSolutionsMenu(phone)
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	default:
+		sendAboutASKworX(phone)
+	}
+}
+
+func sendIndustriesPage(phone string) {
+	sessions[phone] = StateIndustries
+	body := "🏭 Industries We Serve\n🚗 Automotive | 🔋 EV | 💊 Pharma | 🍔 Food & Bev | 📦 Material Handling | 👕 Textiles | EMS | Oil & Gas\n\nWe work with ALL manufacturing sectors!"
+	buttons := []Button{
+		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
+		{ID: "our_solutions", Title: "🔧 Our Solutions"},
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendInteractiveButtons(phone, body, buttons) // No image here, keeping it as interactive only
+}
+
+func handleIndustriesFlow(phone, text string) {
+	switch text {
+	case "get_free_quote":
+		startQuoteFlow(phone)
+	case "our_solutions":
+		sendSolutionsMenu(phone)
+	case "main_menu":
+		sendOpeningMessage(phone)
+	default:
+		sendIndustriesPage(phone)
+	}
+}
