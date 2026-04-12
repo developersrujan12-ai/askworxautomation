@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: '/api',
 });
 
 // For simplicity in this demo, we'll just check for a token in localStorage
@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const login = (password) => axios.post('http://localhost:3000/api/login', { password });
+export const login = (password) => axios.post('/api/login', { password });
 
 export const getStats = () => api.get('/stats');
 export const getLeads = () => api.get('/leads');

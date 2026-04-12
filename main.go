@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"askworx-whatsapp-bot/db"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -42,12 +43,26 @@ func main() {
 	}))
 
 	// Routes
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<h1>🚀 ASKworX Bot is running!</h1><p>API is healthy at <a href='/api/leads'>/api/leads</a></p>"))
+	})
+
 	r.HandleFunc("/webhook", WebhookHandler)
 	r.Post("/api/login", AuthHandler)
 	r.Mount("/api", AdminRoutes())
 
-	// Static Files Frontend (Optional)
-	// r.Handle("/*", http.FileServer(http.Dir("./admin-frontend/dist")))
+	// Serve Frontend
+	fs := http.FileServer(http.Dir("./admin-frontend/dist"))
+	r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If the file exists, serve it, otherwise serve index.html (for React Router)
+		path := r.URL.Path
+		if _, err := os.Stat("admin-frontend/dist" + path); os.IsNotExist(err) {
+			http.ServeFile(w, r, "admin-frontend/dist/index.html")
+			return
+		}
+		fs.ServeHTTP(w, r)
+	}))
 
 	port := os.Getenv("PORT")
 	if port == "" {

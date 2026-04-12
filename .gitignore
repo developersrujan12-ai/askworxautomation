@@ -11,9 +11,11 @@ bin/
 
 # Frontend dependencies
 node_modules/
-dist/
 dist-ssr/
 *.local
+
+# Exception for production build
+!admin-frontend/dist/
 
 # IDEs
 .vscode/
