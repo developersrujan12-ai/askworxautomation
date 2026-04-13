@@ -5,7 +5,19 @@ import (
 	"time"
 )
 
-func LogMessage(phone, direction, message string) error {
+func LogMessage(phone, direction, message string, waID ...string) error {
+	msgID := ""
+	if len(waID) > 0 {
+		msgID = waID[0]
+	}
+
+	if msgID != "" {
+		_, err := Pool.Exec(context.Background(), 
+			"INSERT INTO messages_log (phone, direction, message, wa_msg_id) VALUES ($1, $2, $3, $4) ON CONFLICT (wa_msg_id) DO NOTHING", 
+			phone, direction, message, msgID)
+		return err
+	}
+
 	_, err := Pool.Exec(context.Background(), 
 		"INSERT INTO messages_log (phone, direction, message) VALUES ($1, $2, $3)", 
 		phone, direction, message)

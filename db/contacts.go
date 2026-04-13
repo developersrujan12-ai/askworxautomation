@@ -34,8 +34,32 @@ type Contact struct {
 	JoinedAt  time.Time `json:"joined_at"`
 }
 
+func SyncNamesFromLeads() error {
+	_, err := Pool.Exec(context.Background(), `
+		UPDATE contacts 
+		SET name = leads.name, company = leads.company
+		FROM leads 
+		WHERE contacts.phone = leads.phone 
+		AND (contacts.name IS NULL OR contacts.name = '')
+	`)
+	return err
+}
+
 func GetAllContacts() ([]Contact, error) {
-	rows, err := Pool.Query(context.Background(), "SELECT id, phone, name, company, joined_at FROM contacts ORDER BY joined_at DESC")
+	// Sync names before fetching
+	SyncNamesFromLeads()
+	
+	query := `
+		SELECT c.id, c.phone, c.name, c.company, c.joined_at
+		FROM contacts c
+		LEFT JOIN (
+			SELECT phone, MAX(sent_at) as last_msg
+			FROM messages_log
+			GROUP BY phone
+		) m ON c.phone = m.phone
+		ORDER BY COALESCE(m.last_msg, c.joined_at) DESC
+	`
+	rows, err := Pool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
 	}

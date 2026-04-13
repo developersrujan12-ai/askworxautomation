@@ -13,6 +13,7 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [lastMessageId, setLastMessageId] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -42,8 +43,15 @@ const Messages = () => {
   }, [selectedContact]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (messages.length > 0) {
+      const latestId = messages[messages.length - 1].id;
+      // Scroll to bottom on first load OR when a brand new message arrives
+      if (!lastMessageId || latestId !== lastMessageId) {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+        setLastMessageId(latestId);
+      }
     }
   }, [messages]);
 

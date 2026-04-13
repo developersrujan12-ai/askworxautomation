@@ -33,5 +33,6 @@ CREATE TABLE IF NOT EXISTS messages_log (
     phone VARCHAR, 
     direction VARCHAR, 
     message TEXT, 
+    wa_msg_id VARCHAR UNIQUE, 
     sent_at TIMESTAMP DEFAULT NOW()
 );

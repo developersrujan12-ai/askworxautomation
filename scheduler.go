@@ -12,16 +12,16 @@ import (
 func InitScheduler() {
 	c := cron.New()
 
-	// Monday 9:00 AM Broadcast
-	_, err := c.AddFunc("0 9 * * 1", func() {
-		log.Println("Starting Monday morning broadcast...")
+	// Daily 9:00 AM IST Greeting
+	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
+		log.Println("Starting daily IST 9:00 AM greeting...")
 		phones, err := db.GetAllPhoneNumbers()
 		if err != nil {
 			log.Println("Error fetching phones for broadcast:", err)
 			return
 		}
 
-		msg := "🌟 Good Monday from ASKworX!\n━━━━━━━━━━━━━━━━━━━━━━━━\nStart your week with smarter automation!\n\n💡 Industry Insight:\nCompanies using IIoT solutions see up to 30% reduction in unplanned downtime and 25% energy savings.\n\n🏭 Is your plant ready for Industry 4.0?\n\nType SERVICES to explore our solutions.\n📞 +91 9030108949\n🌐 www.askworx.in"
+		msg := "🏭 Good Morning from ASKworX! ☀️\n━━━━━━━━━━━━━━━━━━━━━━━━\n\"Built on experience. Delivered with innovation.\"\n\nWe hope you have a productive day ahead. How can we help automate your growth today?\n\nType MENU for services.\n🌐 www.askworx.in"
 		for _, p := range phones {
 			sendTextMessage(p, msg)
 		}
@@ -30,8 +30,8 @@ func InitScheduler() {
 		log.Println("Error scheduling broadcast:", err)
 	}
 
-	// Daily check for new leads older than 24h
-	_, err = c.AddFunc("0 10 * * *", func() {
+	// Daily check for new leads older than 24h (IST 10 AM)
+	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
 		log.Println("Starting daily lead follow-up check...")
 		count, err := db.GetNewLeadsCount()
 		if err != nil {

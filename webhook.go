@@ -18,6 +18,7 @@ type WebhookRequest struct {
 					WaID string `json:"wa_id"`
 				} `json:"contacts"`
 				Messages []struct {
+					ID   string `json:"id"`
 					From string `json:"from"`
 					Text *struct {
 						Body string `json:"body"`
@@ -77,7 +78,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 					}
 
 					if text != "" {
-						db.LogMessage(phone, "incoming", text)
+						db.LogMessage(phone, "incoming", text, msg.ID)
 						go handleMessage(phone, text)
 					}
 				}
