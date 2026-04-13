@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getContacts } from '../api';
 import { format } from 'date-fns';
 import { Users, Search, MessageSquare, ExternalLink } from 'lucide-react';
+import { formatSlug, getInitial } from '../utils';
 
 const Contacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -58,10 +59,10 @@ const Contacts = () => {
           <div key={c.id || c.phone} className="glass-card p-6 rounded-3xl hover:shadow-xl transition-all border border-transparent hover:border-primary/10">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl">
-                {(c.name || '?')[0].toUpperCase()}
+                {getInitial(c.name, c.phone)}
               </div>
               <div>
-                <h3 className="font-bold text-gray-800 truncate max-w-[150px]">{c.name || 'Anonymous'}</h3>
+                <h3 className="font-bold text-gray-800 truncate max-w-[150px]">{c.name ? formatSlug(c.name) : 'Anonymous'}</h3>
                 <p className="text-xs text-gray-400">
                   Joined {c.joined_at ? format(new Date(c.joined_at), 'MMM yyyy') : 'Recently'}
                 </p>
@@ -75,7 +76,7 @@ const Contacts = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] text-gray-400 uppercase font-black">Company</span>
-                <span className="text-sm text-gray-600 truncate">{c.company || 'Not Specified'}</span>
+                <span className="text-sm text-gray-600 truncate">{c.company ? formatSlug(c.company) : 'Not Specified'}</span>
               </div>
             </div>
 

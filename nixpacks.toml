@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["...", "nodejs"]
+
+[phases.build]
+dependsOn = ["setup"]
+cmds = [
+  "cd admin-frontend && npm install && npm run build",
+  "go build -o askworx-bot ."
+]
+
+[start]
+cmd = "./askworx-bot"

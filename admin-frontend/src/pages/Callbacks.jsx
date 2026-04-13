@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getCallbacks, markCallbackDone } from '../api';
 import { format } from 'date-fns';
 import { Phone, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import { formatSlug } from '../utils';
 
 const Callbacks = () => {
   const [callbacks, setCallbacks] = useState([]);
@@ -53,7 +54,7 @@ const Callbacks = () => {
               <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-lg font-bold">URGENT</span>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-1">{c.name}</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-1">{formatSlug(c.name)}</h3>
             <p className="text-primary font-bold text-lg mb-4">{c.phone}</p>
 
             <div className="space-y-2 mb-6">
@@ -95,7 +96,7 @@ const Callbacks = () => {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="text-green-500 w-5 h-5" />
-                    <span className="font-bold text-gray-700">{c.name}</span>
+                    <span className="font-bold text-gray-700">{formatSlug(c.name)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{c.phone}</td>

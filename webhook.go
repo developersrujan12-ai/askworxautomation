@@ -11,6 +11,12 @@ type WebhookRequest struct {
 	Entry []struct {
 		Changes []struct {
 			Value struct {
+				Contacts []struct {
+					Profile struct {
+						Name string `json:"name"`
+					} `json:"profile"`
+					WaID string `json:"wa_id"`
+				} `json:"contacts"`
 				Messages []struct {
 					From string `json:"from"`
 					Text *struct {
@@ -54,6 +60,13 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 		for _, entry := range req.Entry {
 			for _, change := range entry.Changes {
+				// 1. Save contact names from profile
+				for _, contact := range change.Value.Contacts {
+					db.SaveContact(contact.WaID)
+					db.UpdateContactName(contact.WaID, contact.Profile.Name)
+				}
+
+				// 2. Process messages
 				for _, msg := range change.Value.Messages {
 					phone := msg.From
 					text := ""

@@ -3,6 +3,7 @@ import StatCard from '../components/StatCard';
 import { getStats, getLeads, getCallbacks } from '../api';
 import { UserPlus, PhoneCall, Users, MessageSquare, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatSlug } from '../utils';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -96,11 +97,11 @@ const Dashboard = () => {
                   <tr key={lead.id || idx} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-800">{lead.name || 'New Lead'}</span>
+                        <span className="font-bold text-gray-800">{lead.name ? formatSlug(lead.name) : 'New Lead'}</span>
                         <span className="text-xs text-gray-500">{lead.phone || 'N/A'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{lead.company || 'Private'}</td>
+                    <td className="px-6 py-4 text-sm">{lead.company ? formatSlug(lead.company) : 'Private'}</td>
                     <td className="px-6 py-4 text-sm max-w-[150px] truncate">{lead.requirement || 'Consultation Request'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${

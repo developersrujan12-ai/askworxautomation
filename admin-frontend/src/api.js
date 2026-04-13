@@ -1,8 +1,16 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://askworx-bot-production.up.railway.app';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${BASE_URL}/api`,
 });
+
+// Create a separate instance for login to use the full URL easily
+const authApi = axios.create({
+  baseURL: BASE_URL,
+});
+
 
 // For simplicity in this demo, we'll just check for a token in localStorage
 api.interceptors.request.use((config) => {
@@ -13,7 +21,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const login = (password) => axios.post('/api/login', { password });
+export const login = (password) => authApi.post('/api/login', { password });
 
 export const getStats = () => api.get('/stats');
 export const getLeads = () => api.get('/leads');

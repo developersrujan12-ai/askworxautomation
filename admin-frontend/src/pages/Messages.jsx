@@ -3,6 +3,7 @@ import { getContacts, getChatHistory, sendMessage } from '../api';
 import { useSearchParams } from 'react-router-dom';
 import { Send, Search, User, Phone, Briefcase, Calendar, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatSlug, getInitial } from '../utils';
 
 const Messages = () => {
   const [searchParams] = useSearchParams();
@@ -112,13 +113,13 @@ const Messages = () => {
               }`}
             >
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-primary font-bold">
-                {(c.name || '?')[0].toUpperCase()}
+                {getInitial(c.name, c.phone)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
-                  <h4 className="font-bold text-gray-800 text-sm truncate">{c.name || c.phone}</h4>
+                  <h4 className="font-bold text-gray-800 text-sm truncate">{c.name ? formatSlug(c.name) : c.phone}</h4>
                 </div>
-                <p className="text-xs text-gray-400 truncate">{c.company || 'New Inquiry'}</p>
+                <p className="text-xs text-gray-400 truncate">{c.company ? formatSlug(c.company) : 'Recent Activity'}</p>
               </div>
             </div>
           ))}
