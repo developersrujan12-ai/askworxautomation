@@ -21,7 +21,7 @@ type MessageLog struct {
 }
 
 func GetAllMessages() ([]MessageLog, error) {
-	rows, err := Pool.Query(context.Background(), "SELECT id, phone, direction, message, sent_at FROM messages_log ORDER BY sent_at DESC LIMIT 100")
+	rows, err := Pool.Query(context.Background(), "SELECT id, phone, direction, message, sent_at FROM messages_log ORDER BY sent_at DESC")
 	if err != nil {
 		return nil, err
 	}

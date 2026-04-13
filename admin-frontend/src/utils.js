@@ -4,8 +4,12 @@
  */
 export const formatSlug = (slug) => {
   if (!slug) return '';
-  return slug
-    .split(/_|-/)
+  // Replace underscores and hyphens with spaces
+  const text = slug.replace(/[_-]/g, ' ');
+  // Title Case each word
+  return text
+    .split(' ')
+    .filter(word => word.length > 0)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 };

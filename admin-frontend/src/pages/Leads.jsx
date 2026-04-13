@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getLeads, updateLeadStatus, sendMessage } from '../api';
 import { format } from 'date-fns';
 import { Search, Filter, MessageCircle, MoreVertical, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { formatSlug } from '../utils';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -124,8 +125,8 @@ const Leads = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-gray-800">{lead.name || 'New Lead'}</span>
-                      <span className="text-xs text-gray-500 font-medium">{lead.company || 'Private Inquiry'}</span>
+                      <span className="font-bold text-gray-800">{lead.name ? formatSlug(lead.name) : 'New Lead'}</span>
+                      <span className="text-xs text-gray-500 font-medium">{lead.company ? formatSlug(lead.company) : 'Private Inquiry'}</span>
                       <span className="text-xs text-primary font-bold mt-1">
                         {lead.contact_phone || lead.phone}
                       </span>

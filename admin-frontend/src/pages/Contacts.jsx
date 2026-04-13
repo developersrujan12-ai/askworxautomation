@@ -62,7 +62,7 @@ const Contacts = () => {
                 {getInitial(c.name, c.phone)}
               </div>
               <div>
-                <h3 className="font-bold text-gray-800 truncate max-w-[150px]">{c.name ? formatSlug(c.name) : 'Anonymous'}</h3>
+                <h3 className="font-bold text-gray-800 truncate max-w-[150px]">{c.name ? formatSlug(c.name) : c.phone}</h3>
                 <p className="text-xs text-gray-400">
                   Joined {c.joined_at ? format(new Date(c.joined_at), 'MMM yyyy') : 'Recently'}
                 </p>

@@ -136,7 +136,7 @@ const Messages = () => {
                  {(selectedContact.name || '?')[0].toUpperCase()}
                </div>
                <div>
-                 <h3 className="font-bold text-gray-800">{selectedContact.name || 'Anonymous Contact'}</h3>
+                 <h3 className="font-bold text-gray-800">{selectedContact.name ? formatSlug(selectedContact.name) : selectedContact.phone}</h3>
                  <p className="text-xs text-green-500 font-medium">Online (via WhatsApp)</p>
                </div>
             </div>
@@ -186,7 +186,7 @@ const Messages = () => {
                             {isSystemAction ? (
                                <div className="flex items-center gap-2 text-primary bg-primary/5 py-2 px-3 rounded-xl border border-primary/10 mb-1">
                                  <span className="text-[10px] font-black uppercase tracking-wider">Action</span>
-                                 <p className="text-sm font-bold truncate">{textContent.replace(/_/g, ' ')}</p>
+                                 <p className="text-sm font-bold truncate">{formatSlug(textContent)}</p>
                                </div>
                             ) : (
                                <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">{textContent}</p>
