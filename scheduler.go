@@ -95,9 +95,9 @@ func broadcastQuiz(camp db.Campaign, phones []string) {
 			"*WEEKLY KNOWLEDGE CHALLENGE*\n\n"+
 			"❓ *QUESTION:*\n%s?\n\n"+
 			"📍 *OPTIONS:*\n"+
-			"🅰️ %s\n"+
-			"🅱️ %s\n"+
-			"©️ %s\n\n"+
+			"📍 *A:* %s\n"+
+			"📍 *B:* %s\n"+
+			"📍 *C:* %s\n\n"+
 			"👉 *Tap your answer below to participate!*",
 		camp.Question, camp.OptionA, camp.OptionB, camp.OptionC,
 	)

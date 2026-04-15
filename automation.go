@@ -78,9 +78,9 @@ func handleQuizResponse(phone, answer string, quiz *db.Quiz) {
 
 	var msg string
 	if isCorrect {
-		msg = "🎉 *Awesome! That’s correct!*\n\nDo you want the explanation? Reply *YES* or *NO*"
+		msg = "🎉 *Thank you for participating in the ASKworX Weekly Knowledge Challenge!*\n\n✅ *Awesome! That's the correct answer.*\n\nWould you like to see the detailed explanation? Tap below! 👇"
 	} else {
-		msg = "❌ *Oops! That’s not correct.*\n\nDo you want the right answer? Reply *YES* or *NO*"
+		msg = "🎉 *Thank you for participating in the ASKworX Weekly Knowledge Challenge!*\n\n❌ *Oops! That was a tricky one, but it's not quite correct.*\n\nWould you like to see the right answer and explanation? Tap below! 👇"
 	}
 
 	// Store quiz and update state
