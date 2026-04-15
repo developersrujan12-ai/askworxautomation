@@ -122,18 +122,12 @@ func broadcastQuiz(camp db.Campaign, phones []string) {
 	for _, phone := range phones {
 		sendInteractiveButtons(phone, quizBody, buttons)
 
-		// Nudge strategy: Wait 10 minutes to see if they answer the quiz
-		go func(p string, qID int) {
-			time.Sleep(10 * time.Minute)
-			answered, err := db.HasUserResponded(qID, p)
-			if err != nil {
-				return
-			}
-			if !answered {
-				log.Printf("[Scheduler] User %s didn't answer quiz, sending nudge", p)
-				sendEngagementNudge(p)
-			}
-		}(phone, quizID)
+		// ENGAGEMENT TRIGGER: Wait exactly 2 minutes, then send the premium engagement message
+		go func(p string) {
+			time.Sleep(2 * time.Minute)
+			log.Printf("[Scheduler] Sending 2-min engagement nudge to %s", p)
+			sendEngagementNudge(p)
+		}(phone)
 	}
 }
 

@@ -47,6 +47,10 @@ const (
 	StateLeadCallName      SessionState = "lead_call_name"
 	StateLeadCallCompany   SessionState = "lead_call_company"
 	StateLeadCallTime      SessionState = "lead_call_time"
+
+	StateLeadServiceName   SessionState = "lead_service_name"
+	StateLeadServiceCompany SessionState = "lead_service_company"
+	StateLeadServiceTime   SessionState = "lead_service_time"
 )
 
 var sessions = map[string]SessionState{}
@@ -105,6 +109,20 @@ func handleMessage(phone, input string) {
 		sendIndustriesPage(phone)
 		return
 	}
+	
+	// Engagement Nudge Overrides
+	if text == "flow_service" {
+		startLeadServiceFlow(phone)
+		return
+	}
+	if text == "flow_quotation" {
+		startLeadQuoteFlow(phone)
+		return
+	}
+	if text == "flow_callback" {
+		startLeadCallFlow(phone)
+		return
+	}
 
 	state := sessions[phone]
 	if state == "" {
@@ -126,6 +144,12 @@ func handleMessage(phone, input string) {
 		handleLeadCallCompany(phone, input)
 	case StateLeadCallTime:
 		handleLeadCallTime(phone, input)
+	case StateLeadServiceName:
+		handleLeadServiceName(phone, input)
+	case StateLeadServiceCompany:
+		handleLeadServiceCompany(phone, input)
+	case StateLeadServiceTime:
+		handleLeadServiceTime(phone, input)
 	case StateMain:
 		handleMainFlow(phone, text)
 	case StateSolutions:
@@ -656,7 +680,51 @@ func handleIndustriesFlow(phone, text string) {
 	}
 }
 
-// --- FLOW: LEAD GENERATION (NUDGE) ---
+// --- FLOW: LEAD SERVICE REQUEST ---
+
+func startLeadServiceFlow(phone string) {
+	sessions[phone] = StateLeadServiceName
+	tempLeads[phone] = &TempLead{}
+	body := "Here are our key services:\n\n" +
+		"• Industrial Automation\n" +
+		"• PLC / SCADA / IIoT\n" +
+		"• ATEX Products\n" +
+		"• Software Development\n" +
+		"• Digital Marketing\n\n" +
+		"To connect you with the right expert, may I have your name?"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadServiceName(phone, input string) {
+	if strings.Contains(input, "_") { return }
+	tempLeads[phone].Name = input
+	sessions[phone] = StateLeadServiceCompany
+	body := "Company name?"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadServiceCompany(phone, input string) {
+	tempLeads[phone].Company = input
+	sessions[phone] = StateLeadServiceTime
+	body := "Preferred time to connect?"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadServiceTime(phone, input string) {
+	t := tempLeads[phone]
+	t.Time = input
+
+	// Confirmation
+	sendTextMessage(phone, "✅ Thank you! Our team will connect with you shortly.")
+
+	// Notify Team
+	NotifyTeam(phone, "Service Request", fmt.Sprintf("Name: %s\nCompany: %s\nPreferred Time: %s\nNeeds consultation on our services.", t.Name, t.Company, t.Time))
+
+	sessions[phone] = StateMain
+	delete(tempLeads, phone)
+}
+
+// --- FLOW: LEAD QUOTATION ---
 
 func startLeadQuoteFlow(phone string) {
 	sessions[phone] = StateLeadQuoteName

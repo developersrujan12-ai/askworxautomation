@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"askworx-whatsapp-bot/db"
 )
@@ -129,12 +128,6 @@ func handleQuizExplanationReply(phone, upper string) {
 	// Reset state
 	sessions[phone] = StateMain
 	delete(quizSessionStore, phone)
-	
-	// Nudge strategy: Wait 2 minutes after answering the quiz
-	go func(p string) {
-		time.Sleep(2 * time.Minute)
-		sendEngagementNudge(p)
-	}(phone)
 }
 
 // StartQueryFlow initiates the support assistant flow — called when no quiz/FAQ matched.
@@ -287,19 +280,15 @@ func tryFAQMatch(input string) (string, bool) {
 // sendEngagementNudge sends a professional business introduction to convert
 // quiz interest into service inquiries.
 func sendEngagementNudge(phone string) {
-	greeting := "👋 Hi! We hope you’re enjoying our weekly insights.\n\n" +
-		"At ASKworX, we help businesses with:\n\n" +
-		"🔧 Industrial Automation & Maintenance\n" +
-		"⚙️ PLC, SCADA, IIoT Solutions\n" +
-		"🛠️ ATEX Certified Industrial Products\n" +
-		"💻 Software Solutions (CRM, ERP, Apps)\n" +
-		"📈 Digital Marketing & Business Automation\n\n" +
+	greeting := "👋 Welcome to ASKworX.\n\n" +
+		"We are a Ground-to-Cloud automation company helping businesses with industrial automation, digital transformation, and smart engineering solutions.\n\n" +
+		"From PLC, SCADA, and IIoT systems to software development, CRM solutions, and digital marketing — we provide complete end-to-end solutions.\n\n" +
 		"How can we assist you today?"
 
 	buttons := []Button{
-		{ID: "quotation", Title: "1️⃣ Request Quote"},
-		{ID: "callback", Title: "2️⃣ Book Callback"},
-		{ID: "explore", Title: "3️⃣ Explore Services"},
+		{ID: "flow_service", Title: "1️⃣ 🔧 Service Request"},
+		{ID: "flow_quotation", Title: "2️⃣ 💰 Get a Quotation"},
+		{ID: "flow_callback", Title: "3️⃣ 📞 Book a Callback"},
 	}
 
 	sendInteractiveButtons(phone, greeting, buttons)
