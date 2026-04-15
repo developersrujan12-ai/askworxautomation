@@ -53,9 +53,7 @@ func tryAutomationModules(phone, rawInput string) bool {
 				handleQuizResponse(phone, ans, quiz)
 				return true
 			}
-			// Active quiz present but invalid reply
-			sendTextMessage(phone, "Please *tap one of the buttons* above or reply with *A*, *B*, or *C* to participate in the quiz! 🎯")
-			return true
+			// If not a quiz answer, do NOT hijack. Let it fall through to other modules.
 		}
 	}
 
