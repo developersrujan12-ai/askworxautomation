@@ -286,9 +286,9 @@ func sendEngagementNudge(phone string) {
 		"How can we assist you today?"
 
 	buttons := []Button{
-		{ID: "flow_service", Title: "1️⃣ 🔧 Service Request"},
-		{ID: "flow_quotation", Title: "2️⃣ 💰 Get a Quotation"},
-		{ID: "flow_callback", Title: "3️⃣ 📞 Book a Callback"},
+		{ID: "flow_service", Title: "🔧 Service Request"},
+		{ID: "flow_quotation", Title: "💰 Get a Quote"},
+		{ID: "flow_callback", Title: "📞 Book Callback"},
 	}
 
 	sendInteractiveButtons(phone, greeting, buttons)

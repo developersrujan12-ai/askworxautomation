@@ -48,6 +48,7 @@ const (
 	StateLeadCallCompany   SessionState = "lead_call_company"
 	StateLeadCallTime      SessionState = "lead_call_time"
 
+	StateLeadServiceCategory SessionState = "lead_service_category"
 	StateLeadServiceName   SessionState = "lead_service_name"
 	StateLeadServiceCompany SessionState = "lead_service_company"
 	StateLeadServiceTime   SessionState = "lead_service_time"
@@ -144,6 +145,8 @@ func handleMessage(phone, input string) {
 		handleLeadCallCompany(phone, input)
 	case StateLeadCallTime:
 		handleLeadCallTime(phone, input)
+	case StateLeadServiceCategory:
+		handleLeadServiceCategory(phone, input)
 	case StateLeadServiceName:
 		handleLeadServiceName(phone, input)
 	case StateLeadServiceCompany:
@@ -683,15 +686,29 @@ func handleIndustriesFlow(phone, text string) {
 // --- FLOW: LEAD SERVICE REQUEST ---
 
 func startLeadServiceFlow(phone string) {
-	sessions[phone] = StateLeadServiceName
+	sessions[phone] = StateLeadServiceCategory
 	tempLeads[phone] = &TempLead{}
-	body := "Here are our key services:\n\n" +
-		"• Industrial Automation\n" +
-		"• PLC / SCADA / IIoT\n" +
-		"• ATEX Products\n" +
-		"• Software Development\n" +
-		"• Digital Marketing\n\n" +
-		"To connect you with the right expert, may I have your name?"
+	body := "Here are our key services. What kind of service are you looking for?"
+	
+	buttons := []Button{
+		{ID: "cat_automation", Title: "⚙️ Industrial/PLC"},
+		{ID: "cat_app_dev", Title: "💻 Application Dev"},
+		{ID: "cat_marketing", Title: "📈 Digital Marketing"},
+	}
+	sendInteractiveButtons(phone, body, buttons)
+}
+
+func handleLeadServiceCategory(phone, input string) {
+	// Map button IDs to human readable strings
+	interest := input
+	if input == "cat_automation" { interest = "Industrial Automation / PLC / ATEX" }
+	if input == "cat_app_dev" { interest = "Application & Software Development (CRM)" }
+	if input == "cat_marketing" { interest = "Digital Marketing & SEO" }
+
+	tempLeads[phone].Interest = interest
+	sessions[phone] = StateLeadServiceName
+	
+	body := "Great choice! To connect you with the right expert, may I have your name?"
 	sendTextMessage(phone, body)
 }
 
