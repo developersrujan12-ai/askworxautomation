@@ -138,6 +138,7 @@ func sendToMeta(payload map[string]interface{}, to, logMsg string) {
 	if resp.StatusCode != http.StatusOK {
 		var errResp interface{}
 		json.NewDecoder(resp.Body).Decode(&errResp)
+		log.Printf("[Meta Error] Payload: %s\n", string(jsonPayload))
 		log.Printf("Meta API Error (Status %d): %v\n", resp.StatusCode, errResp)
 		return
 	}
