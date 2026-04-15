@@ -128,9 +128,16 @@ func GetCampaignAnalytics(campaignID int) (CampaignAnalytics, error) {
 
 	// Quiz specific — filter responses by checking which quiz rows belong to this campaign
 	rows, err := Pool.Query(context.Background(),
-		`SELECT qr.phone, COALESCE(c.name, ''), qr.answer, qr.is_correct 
+		`SELECT qr.phone, 
+		        COALESCE(NULLIF(c.name, ''), NULLIF(l.name, ''), 'Unknown'), 
+		        qr.answer, qr.is_correct 
 		 FROM quiz_responses qr
 		 LEFT JOIN contacts c ON qr.phone = c.phone
+		 LEFT JOIN (
+		     SELECT DISTINCT ON (phone) phone, name 
+		     FROM leads 
+		     ORDER BY phone, created_at DESC
+		 ) l ON qr.phone = l.phone
 		 WHERE qr.quiz_id IN (SELECT id FROM quizzes WHERE campaign_id = $1)`, campaignID)
 	if err != nil {
 		return a, nil // analytics unavailable for posters
