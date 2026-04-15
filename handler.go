@@ -234,7 +234,7 @@ func handleMainFlow(phone, text string) {
 // --- FLOW: SOLUTIONS ---
 func sendSolutionsMenu(phone string) {
 	sessions[phone] = StateSolutions
-	imageURL := "https://images.unsplash.com/photo-1565608083953-ac8391834d82?w=800"
+	imageURL := "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800"
 	body := "🔧 Our Solutions — Ground to Cloud Automation\nFrom sensor-level data to cloud intelligence, we engineer the future of manufacturing.\n\n✅ PLC & SCADA Systems\n✅ Industrial Networking & IIoT\n✅ Digital Transformation (Software/ERP)\n✅ ATEX Certified Industrial Products\n✅ AI-Powered Data Analytics\n\nWhat are you looking for?"
 	buttons := []Button{
 		{ID: "industrial_auto", Title: "⚙️ Industrial Auto"},
@@ -260,7 +260,7 @@ func handleSolutionsFlow(phone, text string) {
 // --- FLOW: INDUSTRIAL ---
 func sendIndustrialMenu(phone string) {
 	sessions[phone] = StateIndustrial
-	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
+	imageURL := "https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=800"
 	body := "⚙️ Industrial Automation\nThe Foundation: Total Control at Machine Level\n\nWe design, build, and commission high-reliability automation systems engineered for continuous 24/7 industrial operations. Our experts specialize in creating seamless machine-level interfaces that maximize uptime.\n\n🔹 End-to-End System Design\n🔹 Retrofitting & Upgrades\n🔹 Machine Monitoring\n🔹 High-Performance Algorithms\n🔹 Safety-First Engineering\n\nSelect a service to learn more:"
 	buttons := []Button{
 		{ID: "plc_control", Title: "⚡ PLC & Control"},

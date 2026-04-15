@@ -144,6 +144,7 @@ func sendToMeta(payload map[string]interface{}, to, logMsg string) {
 	}
 
 	db.LogMessage(to, "outgoing", logMsg)
+	log.Printf("✅ Meta Success! Message sent to %s: %s\n", to, logMsg)
 }
 
 func createCleanID(text string) string {
