@@ -32,7 +32,7 @@ func tryAutomationModules(phone, rawInput string) bool {
 		return true
 	}
 
-	// ── Priority 2: Active Quiz (New attempt) ─────────────────────────────────
+	// ── Priority 2: Active Quiz — ONLY handle if they type A, B, or C ────────
 	quiz, err := db.GetActiveQuiz()
 	if err != nil {
 		log.Printf("[Quiz] DB error: %v", err)
@@ -40,7 +40,6 @@ func tryAutomationModules(phone, rawInput string) bool {
 	if quiz != nil {
 		answered, _ := db.HasUserResponded(quiz.ID, phone)
 		if !answered {
-			log.Printf("[Quiz] Checking input '%s' against active quiz #%d", upper, quiz.ID)
 			isA := (upper == "A" || strings.Contains(upper, "OPTION A") || upper == "1")
 			isB := (upper == "B" || strings.Contains(upper, "OPTION B") || upper == "2")
 			isC := (upper == "C" || strings.Contains(upper, "OPTION C") || upper == "3")
@@ -49,21 +48,17 @@ func tryAutomationModules(phone, rawInput string) bool {
 				ans := "A"
 				if isB { ans = "B" }
 				if isC { ans = "C" }
-				log.Printf("[Quiz] Match found! User: %s, Answer: %s", phone, ans)
 				handleQuizResponse(phone, ans, quiz)
 				return true
 			}
-			// If not a quiz answer, do NOT hijack. Let it fall through to other modules.
+			// Important: If it's NOT A, B, or C, we just return false 
+			// so the main handler can show the Menu. No more "Selection Force".
 		}
 	}
 
-	// ── Priority 3: FAQ (high-confidence match) ──────────────────────────────
-	if reply, ok := tryFAQMatch(rawInput); ok {
-		sendTextMessage(phone, reply)
-		return true
-	}
+	// FAQ REMOVED: No more FAQ hijacking as requested.
 
-	// ── Priority 4: Query category selection (ongoing Module 2 session) ──────
+	// ── Priority 3: Query category selection (ongoing Module 2 session) ──────
 	if sessions[phone] == StateQueryCategory {
 		handleQueryCategoryReply(phone, upper, rawInput)
 		return true
@@ -265,6 +260,12 @@ var faqKnowledgeBase = []faqEntry{
 // tryFAQMatch returns (answer, isConfident)
 func tryFAQMatch(input string) (string, bool) {
 	lower := strings.ToLower(input)
+
+	// Skip button IDs — they contain underscores and should not be matched by FAQ
+	if strings.Contains(lower, "_") {
+		return "", false
+	}
+
 	for _, entry := range faqKnowledgeBase {
 		for _, kw := range entry.keywords {
 			if strings.Contains(lower, kw) {
