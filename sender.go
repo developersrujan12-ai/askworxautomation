@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -135,11 +136,10 @@ func sendToMeta(payload map[string]interface{}, to, logMsg string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		var errResp interface{}
-		json.NewDecoder(resp.Body).Decode(&errResp)
-		log.Printf("[Meta Error] Payload: %s\n", string(jsonPayload))
-		log.Printf("Meta API Error (Status %d): %v\n", resp.StatusCode, errResp)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("❌ Meta API Error (Status %d): %s\n", resp.StatusCode, string(bodyBytes))
+		log.Printf("❌ Failed Payload: %s\n", string(jsonPayload))
 		return
 	}
 
