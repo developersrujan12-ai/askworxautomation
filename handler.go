@@ -87,7 +87,7 @@ func handleMessage(phone, input string) {
 	}
 
 	// ── Priority 2: Global Command Overrides ─────────────────────────────────
-	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" {
+	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || strings.Contains(text, "main menu") || input == "main_menu" {
 		sendOpeningMessage(phone)
 		return
 	}
@@ -95,19 +95,19 @@ func handleMessage(phone, input string) {
 		sendHelpMessage(phone)
 		return
 	}
-	if text == "services" || text == "solutions" {
+	if text == "services" || text == "solutions" || strings.Contains(text, "our solutions") || input == "our_solutions" {
 		sendSolutionsMenu(phone)
 		return
 	}
-	if text == "contact" {
+	if text == "contact" || strings.Contains(text, "talk to expert") || input == "talk_to_expert" {
 		sendExpertContact(phone)
 		return
 	}
-	if text == "about" {
+	if text == "about" || strings.Contains(text, "about askworx") || input == "about_askworx" {
 		sendAboutASKworX(phone)
 		return
 	}
-	if text == "industries" {
+	if text == "industries" || strings.Contains(text, "our industries") || input == "our_industries" {
 		sendIndustriesPage(phone)
 		return
 	}
@@ -596,8 +596,15 @@ func handleExpertFlow(phone, text string) {
 		StartCategoryQueryFlow(phone, text)
 	case "main_menu":
 		sendOpeningMessage(phone)
+	case "about_askworx":
+		sendAboutASKworX(phone)
 	default:
-		sendExpertContact(phone)
+		// Check if it's one of the other global buttons often present
+		if strings.Contains(text, "solutions") {
+			sendSolutionsMenu(phone)
+		} else {
+			sendExpertContact(phone)
+		}
 	}
 }
 
