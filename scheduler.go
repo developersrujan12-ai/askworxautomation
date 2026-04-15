@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/robfig/cron/v3"
 )
@@ -89,17 +90,15 @@ func InitScheduler() {
 }
 
 func broadcastQuiz(camp db.Campaign, phones []string) {
-	body := fmt.Sprintf(
+	quizBody := fmt.Sprintf(
 		"🌟 *ASKworX Industrial Insight* 🌟\n\n"+
-			"*WEEKLY KNOWLEDGE CHALLENGE*\n"+
-			"───────────────────\n\n"+
-			"❓ *QUESTION:*\n%s\n\n"+
+			"*WEEKLY KNOWLEDGE CHALLENGE*\n\n"+
+			"❓ *QUESTION:*\n%s?\n\n"+
 			"📍 *OPTIONS:*\n"+
 			"🅰️ %s\n"+
 			"🅱️ %s\n"+
-			"🆲 %s\n\n"+
-			"───────────────────\n"+
-			"*Tap your answer below to participate!* 👇",
+			"©️ %s\n\n"+
+			"👉 *Tap your answer below to participate!*",
 		camp.Question, camp.OptionA, camp.OptionB, camp.OptionC,
 	)
 
@@ -121,7 +120,20 @@ func broadcastQuiz(camp db.Campaign, phones []string) {
 	log.Printf("[Scheduler] Activated quiz #%d", quizID)
 
 	for _, phone := range phones {
-		sendInteractiveButtons(phone, body, buttons)
+		sendInteractiveButtons(phone, quizBody, buttons)
+
+		// Nudge strategy: Wait 10 minutes to see if they answer the quiz
+		go func(p string, qID int) {
+			time.Sleep(10 * time.Minute)
+			answered, err := db.HasUserResponded(qID, p)
+			if err != nil {
+				return
+			}
+			if !answered {
+				log.Printf("[Scheduler] User %s didn't answer quiz, sending nudge", p)
+				sendEngagementNudge(p)
+			}
+		}(phone, quizID)
 	}
 }
 

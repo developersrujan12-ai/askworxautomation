@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"askworx-whatsapp-bot/db"
 )
@@ -128,6 +129,12 @@ func handleQuizExplanationReply(phone, upper string) {
 	// Reset state
 	sessions[phone] = StateMain
 	delete(quizSessionStore, phone)
+	
+	// Nudge strategy: Wait 2 minutes after answering the quiz
+	go func(p string) {
+		time.Sleep(2 * time.Minute)
+		sendEngagementNudge(p)
+	}(phone)
 }
 
 // StartQueryFlow initiates the support assistant flow — called when no quiz/FAQ matched.
@@ -154,7 +161,7 @@ func StartQueryFlow(phone, originalMessage string) {
 
 // ─── MODULE 2: PREMIUM SUPPORT HANDLER ────────────────────────────────────────
 
-var categoryLabels = map[string]string{
+var CategoryLabels = map[string]string{
 	"service":   "Service / Maintenance",
 	"quotation": "Quotation Request",
 	"product":   "Product / Technical Query",
@@ -163,7 +170,7 @@ var categoryLabels = map[string]string{
 
 func handleQueryCategoryReply(phone, upper, rawInput string) {
 	// Match against the ID (lowercase rawInput from buttons)
-	label, valid := categoryLabels[strings.ToLower(rawInput)]
+	label, valid := CategoryLabels[strings.ToLower(rawInput)]
 	if !valid {
 		// Edge case: Remind user to use buttons
 		sendTextMessage(phone, "Please select one of the options above 👆")
@@ -186,7 +193,7 @@ func handleQueryCategoryReply(phone, upper, rawInput string) {
 	}
 
 	// Step 7: Notify Internal Team
-	notifyTeam(phone, label, originalMsg)
+	NotifyTeam(phone, label, originalMsg)
 
 	// Step 6: Confirm to User
 	sendTextMessage(phone, "✅ Got it! Our team will contact you shortly regarding your request.")
@@ -196,17 +203,18 @@ func handleQueryCategoryReply(phone, upper, rawInput string) {
 	delete(pendingMessages, phone)
 }
 
-func notifyTeam(phone, category, message string) {
+func NotifyTeam(phone, category, message string) {
 	teamNumber := os.Getenv("TEAM_WHATSAPP_NUMBER")
 	if teamNumber == "" {
-		log.Println("[Module2] TEAM_WHATSAPP_NUMBER not set — skipping notification")
+		log.Println("[Support] TEAM_WHATSAPP_NUMBER not set — skipping notification")
 		return
 	}
-	msg := fmt.Sprintf(
-		"📩 *New Customer Query*\n\n📞 Number: +%s\n📂 Category: %s\n💬 Message: %s",
+	
+	notification := fmt.Sprintf(
+		"📩 *New Customer Query*\n\n👤 *Number:* +%s\n📂 *Category:* %s\n💬 *Message:* %s",
 		phone, category, message,
 	)
-	sendTextMessage(teamNumber, msg)
+	sendTextMessage(teamNumber, notification)
 }
 
 // ─── MODULE 3: FAQ KNOWLEDGE BASE ────────────────────────────────────────────
@@ -274,4 +282,25 @@ func tryFAQMatch(input string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// sendEngagementNudge sends a professional business introduction to convert
+// quiz interest into service inquiries.
+func sendEngagementNudge(phone string) {
+	greeting := "👋 Hi! We hope you’re enjoying our weekly insights.\n\n" +
+		"At ASKworX, we help businesses with:\n\n" +
+		"🔧 Industrial Automation & Maintenance\n" +
+		"⚙️ PLC, SCADA, IIoT Solutions\n" +
+		"🛠️ ATEX Certified Industrial Products\n" +
+		"💻 Software Solutions (CRM, ERP, Apps)\n" +
+		"📈 Digital Marketing & Business Automation\n\n" +
+		"How can we assist you today?"
+
+	buttons := []Button{
+		{ID: "quotation", Title: "1️⃣ Request Quote"},
+		{ID: "callback", Title: "2️⃣ Book Callback"},
+		{ID: "explore", Title: "3️⃣ Explore Services"},
+	}
+
+	sendInteractiveButtons(phone, greeting, buttons)
 }

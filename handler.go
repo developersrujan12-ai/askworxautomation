@@ -37,6 +37,16 @@ const (
 
 	// Automation module states
 	StateQueryCat         SessionState = "query_category"
+
+	// Lead Generation states
+	StateLeadQuoteName     SessionState = "lead_quote_name"
+	StateLeadQuoteCompany  SessionState = "lead_quote_company"
+	StateLeadQuoteInterest SessionState = "lead_quote_interest"
+	StateLeadQuoteDesc     SessionState = "lead_quote_desc"
+	
+	StateLeadCallName      SessionState = "lead_call_name"
+	StateLeadCallCompany   SessionState = "lead_call_company"
+	StateLeadCallTime      SessionState = "lead_call_time"
 )
 
 var sessions = map[string]SessionState{}
@@ -48,7 +58,16 @@ type TempQuote struct {
 	Phone       string
 }
 
+type TempLead struct {
+	Name        string
+	Company     string
+	Interest    string
+	Description string
+	Time        string
+}
+
 var tempQuotes = map[string]*TempQuote{}
+var tempLeads = map[string]*TempLead{}
 var tempCallbacks = map[string]string{}
 
 func handleMessage(phone, input string) {
@@ -93,6 +112,20 @@ func handleMessage(phone, input string) {
 	}
 
 	switch state {
+	case StateLeadQuoteName:
+		handleLeadQuoteName(phone, input)
+	case StateLeadQuoteCompany:
+		handleLeadQuoteCompany(phone, input)
+	case StateLeadQuoteInterest:
+		handleLeadQuoteInterest(phone, input)
+	case StateLeadQuoteDesc:
+		handleLeadQuoteDesc(phone, input)
+	case StateLeadCallName:
+		handleLeadCallName(phone, input)
+	case StateLeadCallCompany:
+		handleLeadCallCompany(phone, input)
+	case StateLeadCallTime:
+		handleLeadCallTime(phone, input)
 	case StateMain:
 		handleMainFlow(phone, text)
 	case StateSolutions:
@@ -160,6 +193,12 @@ func handleMainFlow(phone, text string) {
 		sendExpertContact(phone)
 	case "about_askworx":
 		sendAboutASKworX(phone)
+	case "quotation":
+		startLeadQuoteFlow(phone)
+	case "callback":
+		startLeadCallFlow(phone)
+	case "explore":
+		sendExploreServices(phone)
 	default:
 		sendOpeningMessage(phone)
 	}
@@ -513,26 +552,36 @@ func handleQuotePhone(phone, input string) {
 func sendExpertContact(phone string) {
 	sessions[phone] = StateExpert
 	imageURL := "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800"
-	body := "📞 Talk to Our Expert\nOur team of automation engineers is ready to help you find the right solution.\n\n☎︎ Call: +91 9187458714\n📧 Email: contact@askworx.in\n🌐 Website: www.askworx.in\n⚲ Address: RR Nagar, Bangalore\n\nOr let us call you back!"
+	body := "📞 ASKworX Support Center\nHow can we help you today?\n\nSelect a category below to connect with the right expert."
 	buttons := []Button{
-		{ID: "request_callback", Title: "📋 Request Callback"},
-		{ID: "get_free_quote", Title: "💬 Get Free Quote"},
-		{ID: "main_menu", Title: "🏠 Main Menu"},
+		{ID: "service", Title: "🔧 Service Request"},
+		{ID: "quotation", Title: "💰 Get Quotation"},
+		{ID: "product", Title: "🛠️ Technical Query"},
 	}
 	sendImageWithButtons(phone, imageURL, body, buttons)
 }
 
 func handleExpertFlow(phone, text string) {
 	switch text {
-	case "request_callback":
-		startCallbackFlow(phone)
-	case "get_free_quote":
-		startQuoteFlow(phone)
+	case "service", "quotation", "product", "general":
+		// Handle these categories using the Support Assistant flow
+		StartCategoryQueryFlow(phone, text)
 	case "main_menu":
 		sendOpeningMessage(phone)
 	default:
 		sendExpertContact(phone)
 	}
+}
+
+func StartCategoryQueryFlow(phone, categoryID string) {
+	label := CategoryLabels[categoryID]
+	
+	sessions[phone] = StateMain // Reset
+	
+	sendTextMessage(phone, fmt.Sprintf("✅ *Selected:* %s\n\nOur team will contact you shortly to discuss your requirements. 🙏", label))
+	
+	// Notify team
+	NotifyTeam(phone, label, "User requested this from the menu.")
 }
 
 func startCallbackFlow(phone string) {
@@ -605,4 +654,102 @@ func handleIndustriesFlow(phone, text string) {
 	default:
 		sendIndustriesPage(phone)
 	}
+}
+
+// --- FLOW: LEAD GENERATION (NUDGE) ---
+
+func startLeadQuoteFlow(phone string) {
+	sessions[phone] = StateLeadQuoteName
+	tempLeads[phone] = &TempLead{}
+	body := "📝 Sure! Please share a few details:\n\n1. Your Name"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadQuoteName(phone, input string) {
+	if strings.Contains(input, "_") { return } // ignore button clicks if any
+	tempLeads[phone].Name = input
+	sessions[phone] = StateLeadQuoteCompany
+	body := "2. Company Name"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadQuoteCompany(phone, input string) {
+	tempLeads[phone].Company = input
+	sessions[phone] = StateLeadQuoteInterest
+	body := "3. Area of Interest (e.g., Automation, Software, Marketing)"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadQuoteInterest(phone, input string) {
+	tempLeads[phone].Interest = input
+	sessions[phone] = StateLeadQuoteDesc
+	body := "4. Brief Project Description (2 lines)"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadQuoteDesc(phone, input string) {
+	t := tempLeads[phone]
+	t.Description = input
+	
+	// Confirmation
+	sendTextMessage(phone, "✅ Thank you! Our team will review your requirements and share a quotation shortly.")
+	
+	// Notify Team
+	NotifyTeam(phone, "Quotation", fmt.Sprintf("Interested in: %s\nProject: %s\nCompany: %s\nUser Name: %s", t.Interest, t.Description, t.Company, t.Name))
+	
+	sessions[phone] = StateMain
+	delete(tempLeads, phone)
+}
+
+func startLeadCallFlow(phone string) {
+	sessions[phone] = StateLeadCallName
+	tempLeads[phone] = &TempLead{}
+	body := "📞 Great! Please share:\n\n1. Your Name"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadCallName(phone, input string) {
+	if strings.Contains(input, "_") { return } // ignore button clicks if any
+	tempLeads[phone].Name = input
+	sessions[phone] = StateLeadCallCompany
+	body := "2. Company Name"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadCallCompany(phone, input string) {
+	tempLeads[phone].Company = input
+	sessions[phone] = StateLeadCallTime
+	body := "3. Preferred Time for Call"
+	sendTextMessage(phone, body)
+}
+
+func handleLeadCallTime(phone, input string) {
+	t := tempLeads[phone]
+	t.Time = input
+	
+	// Confirmation
+	sendTextMessage(phone, "✅ Your callback request has been scheduled. Our team will contact you at your preferred time.")
+	
+	// Notify Team
+	NotifyTeam(phone, "Callback", fmt.Sprintf("Time: %s\nCompany: %s\nUser Name: %s", t.Time, t.Company, t.Name))
+	
+	sessions[phone] = StateMain
+	delete(tempLeads, phone)
+}
+
+func sendExploreServices(phone string) {
+	body := "Here’s what we offer:\n\n" +
+		"🔧 Industrial Automation\n" +
+		"⚙️ PLC / SCADA / IIoT\n" +
+		"🛠️ ATEX Products\n" +
+		"💻 Software Development (CRM, ERP, Apps)\n" +
+		"📈 Digital Marketing Solutions\n\n" +
+		"Would you like to:"
+
+	buttons := []Button{
+		{ID: "quotation", Title: "1️⃣ Request Quotation"},
+		{ID: "callback", Title: "2️⃣ Book a Callback"},
+	}
+
+	sendInteractiveButtons(phone, body, buttons)
 }
