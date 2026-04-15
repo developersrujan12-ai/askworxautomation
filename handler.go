@@ -34,6 +34,9 @@ const (
 	StateCallback         SessionState = "callback"
 	StateAbout            SessionState = "about"
 	StateIndustries       SessionState = "industries"
+
+	// Automation module states
+	StateQueryCat         SessionState = "query_category"
 )
 
 var sessions = map[string]SessionState{}
@@ -53,7 +56,12 @@ func handleMessage(phone, input string) {
 	db.LogMessage(phone, "incoming", input)
 	db.SaveContact(phone)
 
-	// Global Command Overrides
+	// ── Priority 1: Automation Modules (Quiz → FAQ → Query) ──────────────────
+	if tryAutomationModules(phone, input) {
+		return
+	}
+
+	// ── Priority 2: Global Command Overrides ─────────────────────────────────
 	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" {
 		sendOpeningMessage(phone)
 		return
@@ -117,8 +125,12 @@ func handleMessage(phone, input string) {
 		handleAboutFlow(phone, text)
 	case StateIndustries:
 		handleIndustriesFlow(phone, text)
-	default:
+	case StateQueryCat:
+		// handled by automation dispatcher (tryAutomationModules), shouldn't reach here
 		sendOpeningMessage(phone)
+	default:
+		// Unknown input in main state → try Module 2 query flow
+		StartQueryFlow(phone, input)
 	}
 }
 

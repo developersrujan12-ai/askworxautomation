@@ -3,15 +3,54 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"askworx-whatsapp-bot/db"
+
 	"github.com/go-chi/chi/v5"
 )
 
 func AdminRoutes() chi.Router {
 	r := chi.NewRouter()
+
+	// ── STATIC FILE SERVING FOR UPLOADS ──────────────────────────────────────
+	uploadDir := "./uploads"
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		os.Mkdir(uploadDir, 0755)
+	}
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
+
+	r.Post("/api/upload", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseMultipartForm(10 << 20) // 10MB max
+		file, handler, err := r.FormFile("file")
+		if err != nil {
+			http.Error(w, "error retrieving file", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+
+		safeFilename := strings.ReplaceAll(handler.Filename, " ", "_")
+		filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(safeFilename))
+		dst, err := os.Create(filepath.Join(uploadDir, filename))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+
+		if _, err := io.Copy(dst, file); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"url": "/uploads/" + filename})
+	})
 
 	r.Get("/stats", func(w http.ResponseWriter, r *http.Request) {
 		contacts, err1 := db.GetAllContacts()
@@ -101,6 +140,89 @@ func AdminRoutes() chi.Router {
 		json.NewDecoder(r.Body).Decode(&body)
 		sendTextMessage(body.Phone, body.Message)
 		w.WriteHeader(http.StatusOK)
+	})
+
+	// ── Campaign Management ─────────────────────────────────────────────────
+
+	r.Get("/campaigns", func(w http.ResponseWriter, r *http.Request) {
+		campaigns, err := db.GetAllCampaigns()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if campaigns == nil {
+			campaigns = []db.Campaign{}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(campaigns)
+	})
+
+	r.Post("/campaigns", func(w http.ResponseWriter, r *http.Request) {
+		var c db.Campaign
+		if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+		// Validation
+		if c.Type != "quiz" && c.Type != "poster" {
+			http.Error(w, "type must be 'quiz' or 'poster'", http.StatusBadRequest)
+			return
+		}
+		if c.Type == "quiz" {
+			if c.Question == "" || c.OptionA == "" || c.OptionB == "" || c.OptionC == "" || c.Explanation == "" {
+				http.Error(w, "all quiz fields are required", http.StatusBadRequest)
+				return
+			}
+			c.CorrectAnswer = strings.ToUpper(c.CorrectAnswer)
+			if c.CorrectAnswer != "A" && c.CorrectAnswer != "B" && c.CorrectAnswer != "C" {
+				http.Error(w, "correct_answer must be A, B, or C", http.StatusBadRequest)
+				return
+			}
+			if len([]rune(c.Explanation)) > 300 {
+				http.Error(w, "explanation must not exceed 300 characters", http.StatusBadRequest)
+				return
+			}
+		}
+		if c.Type == "poster" && c.ImageURL == "" {
+			http.Error(w, "image_url is required for posters", http.StatusBadRequest)
+			return
+		}
+		if c.ScheduledAt.IsZero() {
+			http.Error(w, "scheduled_at is required", http.StatusBadRequest)
+			return
+		}
+
+		id, err := db.CreateCampaign(c)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]int{"id": id})
+	})
+
+	r.Delete("/campaigns/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+		if err := db.CancelCampaign(id); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Get("/campaigns/{id}/analytics", func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+		analytics, err := db.GetCampaignAnalytics(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(analytics)
 	})
 
 	return r

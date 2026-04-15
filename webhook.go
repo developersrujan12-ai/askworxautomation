@@ -3,6 +3,7 @@ package main
 import (
 	"askworx-whatsapp-bot/db"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 )
@@ -78,6 +79,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 					}
 
 					if text != "" {
+						log.Printf("[Webhook] Incoming from %s: %s", phone, text)
 						db.LogMessage(phone, "incoming", text, msg.ID)
 						go handleMessage(phone, text)
 					}

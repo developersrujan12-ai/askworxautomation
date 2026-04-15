@@ -1,11 +1,13 @@
 package main
 
 import (
+	"askworx-whatsapp-bot/db"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
-	"askworx-whatsapp-bot/db"
 	"github.com/robfig/cron/v3"
 )
 
@@ -49,5 +51,107 @@ func InitScheduler() {
 		log.Println("Error scheduling lead check:", err)
 	}
 
+	// ── Every minute: check for due campaigns and broadcast ──────────────────
+	_, err = c.AddFunc("* * * * *", func() {
+		campaigns, err := db.GetDueCampaigns()
+		if err != nil {
+			log.Println("[Scheduler] Error fetching due campaigns:", err)
+			return
+		}
+		if len(campaigns) == 0 {
+			return
+		}
+
+		phones, err := db.GetAllPhoneNumbers()
+		if err != nil || len(phones) == 0 {
+			log.Println("[Scheduler] No contacts to broadcast to")
+			return
+		}
+
+		for _, camp := range campaigns {
+			log.Printf("[Scheduler] Broadcasting campaign #%d (%s) to %d contacts", camp.ID, camp.Type, len(phones))
+
+			switch strings.ToLower(camp.Type) {
+			case "quiz":
+				broadcastQuiz(camp, phones)
+			case "poster":
+				broadcastPoster(camp, phones)
+			}
+
+			db.MarkCampaignSent(camp.ID, len(phones))
+		}
+	})
+	if err != nil {
+		log.Println("Error scheduling campaign broadcaster:", err)
+	}
+
 	c.Start()
+}
+
+func broadcastQuiz(camp db.Campaign, phones []string) {
+	body := fmt.Sprintf(
+		"🌟 *ASKworX Industrial Insight* 🌟\n\n"+
+			"*WEEKLY KNOWLEDGE CHALLENGE*\n"+
+			"───────────────────\n\n"+
+			"❓ *QUESTION:*\n%s\n\n"+
+			"📍 *OPTIONS:*\n"+
+			"🅰️ %s\n"+
+			"🅱️ %s\n"+
+			"🆲 %s\n\n"+
+			"───────────────────\n"+
+			"*Tap your answer below to participate!* 👇",
+		camp.Question, camp.OptionA, camp.OptionB, camp.OptionC,
+	)
+
+	buttons := []Button{
+		{ID: "A", Title: "Option A"},
+		{ID: "B", Title: "Option B"},
+		{ID: "C", Title: "Option C"},
+	}
+
+	// Deactivate any previous quiz first
+	db.DeactivateAllQuizzes()
+
+	// Create quiz entry from campaign
+	quizID, err := db.CreateQuizFromCampaign(camp)
+	if err != nil {
+		log.Printf("[Scheduler] Failed to create quiz entry: %v", err)
+		return
+	}
+	log.Printf("[Scheduler] Activated quiz #%d", quizID)
+
+	for _, phone := range phones {
+		sendInteractiveButtons(phone, body, buttons)
+	}
+}
+
+func broadcastPoster(camp db.Campaign, phones []string) {
+	publicURL := os.Getenv("PUBLIC_URL")
+	actualImageURL := camp.ImageURL
+
+	// If the image is stored locally, we MUST use the public ngrok URL for Meta to reach it
+	if strings.Contains(actualImageURL, "localhost") || strings.HasPrefix(actualImageURL, "/uploads") {
+		filename := filepath.Base(actualImageURL)
+		actualImageURL = fmt.Sprintf("%s/uploads/%s", publicURL, filename)
+		log.Printf("[Scheduler] Local image detected. Rewriting to public: %s", actualImageURL)
+	}
+
+	premiumCaption := fmt.Sprintf(
+		"📢 *ASKworX Industrial Update* 📢\n"+
+			"──────────────────⬡\n\n"+
+			"%s\n\n"+
+			"──────────────────⬡\n"+
+			"🌐 *Visit us:* www.askworx.in\n"+
+			"📧 *Support:* contact@askworx.in",
+		camp.Caption,
+	)
+
+	buttons := []Button{
+		{ID: "expert", Title: "Talk to Expert 📞"},
+		{ID: "menu", Title: "Main Menu 🏠"},
+	}
+
+	for _, phone := range phones {
+		sendImageWithButtons(phone, actualImageURL, premiumCaption, buttons)
+	}
 }

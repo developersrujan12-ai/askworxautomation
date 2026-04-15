@@ -35,5 +35,8 @@ func InitDB() error {
 		}
 	}
 
+	// Hot-fix: Ensure campaign_id exists in quizzes
+	Pool.Exec(context.Background(), `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id)`)
+
 	return Pool.Ping(context.Background())
 }
