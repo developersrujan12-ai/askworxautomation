@@ -742,6 +742,11 @@ func handleLeadServiceTime(phone, input string) {
 	}
 	t.Time = input
 
+	// Save to DB as Lead
+	db.CreateLead(phone, t.Name, t.Company, t.Category+": "+t.Interest, t.Time)
+	db.UpdateContactName(phone, t.Name)
+	db.UpdateContactCompany(phone, t.Company)
+
 	// Confirmation
 	sendTextMessage(phone, "✅ Thank you! Our team will connect with you shortly.")
 
