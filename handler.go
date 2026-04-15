@@ -64,6 +64,7 @@ type TempQuote struct {
 }
 
 type TempLead struct {
+	Category    string
 	Name        string
 	Company     string
 	Interest    string
@@ -582,15 +583,15 @@ func sendExpertContact(phone string) {
 	body := "📞 ASKworX Support Center\nHow can we help you today?\n\nSelect a category below to connect with the right expert."
 	buttons := []Button{
 		{ID: "service", Title: "🔧 Service Request"},
-		{ID: "quotation", Title: "💰 Get Quotation"},
-		{ID: "product", Title: "🛠️ Technical Query"},
+		{ID: "quotation", Title: "📈 Request Quotation"},
+		{ID: "technical", Title: "🛠️ Technical Query"},
 	}
 	sendImageWithButtons(phone, imageURL, body, buttons)
 }
 
 func handleExpertFlow(phone, text string) {
 	switch text {
-	case "service", "quotation", "product", "general":
+	case "service", "quotation", "technical", "general":
 		// Handle these categories using the Support Assistant flow
 		StartCategoryQueryFlow(phone, text)
 	case "main_menu":
@@ -601,14 +602,20 @@ func handleExpertFlow(phone, text string) {
 }
 
 func StartCategoryQueryFlow(phone, categoryID string) {
-	label := CategoryLabels[categoryID]
-	
-	sessions[phone] = StateMain // Reset
-	
-	sendTextMessage(phone, fmt.Sprintf("✅ *Selected:* %s\n\nOur team will contact you shortly to discuss your requirements. 🙏", label))
-	
-	// Notify team
-	NotifyTeam(phone, label, "User requested this from the menu.")
+	label, ok := CategoryLabels[categoryID]
+	if !ok {
+		label = "Inquiry"
+	}
+	tempLeads[phone] = &TempLead{Category: label}
+	sessions[phone] = StateLeadServiceCategory
+
+	body := fmt.Sprintf("✅ *Selected:* %s\n\nWhich service area can we help you with?", label)
+	buttons := []Button{
+		{ID: "cat_automation", Title: "⚙️ Industrial Auto"},
+		{ID: "cat_app_dev", Title: "💻 Digital & Software"},
+		{ID: "cat_marketing", Title: "📊 IIoT & Analytics"},
+	}
+	sendInteractiveButtons(phone, body, buttons)
 }
 
 func startCallbackFlow(phone string) {
@@ -728,14 +735,18 @@ func handleLeadServiceCompany(phone, input string) {
 }
 
 func handleLeadServiceTime(phone, input string) {
-	t := tempLeads[phone]
+	t, ok := tempLeads[phone]
+	if !ok {
+		sendOpeningMessage(phone)
+		return
+	}
 	t.Time = input
 
 	// Confirmation
 	sendTextMessage(phone, "✅ Thank you! Our team will connect with you shortly.")
 
 	// Notify Team
-	NotifyTeam(phone, "Service Request", fmt.Sprintf("Name: %s\nCompany: %s\nPreferred Time: %s\nNeeds consultation on our services.", t.Name, t.Company, t.Time))
+	NotifyTeam(phone, t.Category, fmt.Sprintf("Interested In: %s\nName: %s\nCompany: %s\nPreferred Time: %s\n\nLead generated from Expert Menu.", t.Interest, t.Name, t.Company, t.Time))
 
 	sessions[phone] = StateMain
 	delete(tempLeads, phone)

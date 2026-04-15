@@ -148,9 +148,9 @@ func StartQueryFlow(phone, originalMessage string) {
 // ─── MODULE 2: PREMIUM SUPPORT HANDLER ────────────────────────────────────────
 
 var CategoryLabels = map[string]string{
-	"service":   "Service / Maintenance",
-	"quotation": "Quotation Request",
-	"product":   "Product / Technical Query",
+	"service":   "Service Request",
+	"quotation": "Request Quotation",
+	"technical": "Technical Query",
 	"general":   "General Inquiry",
 }
 
