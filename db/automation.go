@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 )
 
 type Quiz struct {
@@ -48,19 +47,4 @@ func SaveQuizResponse(quizID int, phone, answer string, isCorrect bool) error {
 	          ON CONFLICT (quiz_id, phone) DO NOTHING`
 	_, err := Pool.Exec(context.Background(), query, quizID, phone, answer, isCorrect)
 	return err
-}
-
-// SaveCustomerQuery stores a Module 2 query in the database.
-func SaveCustomerQuery(phone, name, category, message string) error {
-	query := `INSERT INTO customer_queries (phone, name, category, original_message) VALUES ($1, $2, $3, $4)`
-	_, err := Pool.Exec(context.Background(), query, phone, nullableString(name), category, message)
-	return err
-}
-
-// nullableString returns sql.NullString for optional fields.
-func nullableString(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{Valid: false}
-	}
-	return sql.NullString{String: s, Valid: true}
 }

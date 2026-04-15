@@ -130,18 +130,21 @@ func handleQuizExplanationReply(phone, upper string) {
 	delete(quizSessionStore, phone)
 }
 
-// StartQueryFlow initiates Module 2 — called when no quiz/FAQ matched.
+// StartQueryFlow initiates the support assistant flow — called when no quiz/FAQ matched.
 func StartQueryFlow(phone, originalMessage string) {
-	log.Printf("[Module2] Starting query flow for %s", phone)
+	log.Printf("[Support] Starting assistant flow for %s", phone)
 
-	ack := "Thank you for reaching out to *ASKworX*. 🙏\nWe have received your query and our team will get back to you shortly."
-	sendTextMessage(phone, ack)
+	// Step 2: Auto Response
+	greeting := "Hi! 👋 Thanks for reaching out to *ASKworX*.\n\nWe've received your message and our team will assist you shortly."
+	sendTextMessage(phone, greeting)
 
-	body := "Please select your query type below to help us direct you to the right expert:"
+	// Step 3: Send Button Menu
+	body := "Please select your query type:"
 	buttons := []Button{
-		{ID: "1", Title: "Service Request"},
-		{ID: "2", Title: "Get Quotation"},
-		{ID: "3", Title: "Product Query"},
+		{ID: "service", Title: "🔧 Service Request"},
+		{ID: "quotation", Title: "💰 Get Quote"},
+		{ID: "product", Title: "🛠️ Product Query"},
+		{ID: "general", Title: "💬 General Inquiry"},
 	}
 	sendInteractiveButtons(phone, body, buttons)
 
@@ -149,36 +152,48 @@ func StartQueryFlow(phone, originalMessage string) {
 	pendingMessages[phone] = originalMessage
 }
 
-// ─── MODULE 2: QUERY CATEGORY HANDLER ────────────────────────────────────────
+// ─── MODULE 2: PREMIUM SUPPORT HANDLER ────────────────────────────────────────
 
 var categoryLabels = map[string]string{
-	"1": "Service / Maintenance Request",
-	"2": "Quotation Request",
-	"3": "Product / Technical Query",
-	"4": "General Inquiry",
+	"service":   "Service / Maintenance",
+	"quotation": "Quotation Request",
+	"product":   "Product / Technical Query",
+	"general":   "General Inquiry",
 }
 
 func handleQueryCategoryReply(phone, upper, rawInput string) {
-	label, valid := categoryLabels[upper]
+	// Match against the ID (lowercase rawInput from buttons)
+	label, valid := categoryLabels[strings.ToLower(rawInput)]
 	if !valid {
-		sendTextMessage(phone, "Please reply *1*, *2*, *3*, or *4* to select your query type.")
+		// Edge case: Remind user to use buttons
+		sendTextMessage(phone, "Please select one of the options above 👆")
 		return
 	}
 
 	originalMsg := pendingMessages[phone]
-	if err := db.SaveCustomerQuery(phone, "", label, originalMsg); err != nil {
-		log.Printf("[Module2] Save query error: %v", err)
+	
+	// Step 5: Store Query
+	db.SaveCustomerQuery(db.CustomerQuery{
+		PhoneNumber:     phone,
+		UserName:        "Customer", 
+		OriginalMessage: originalMsg,
+	})
+	
+	// Get the ID of the query to update category
+	q, _ := db.GetLatestPendingQuery(phone)
+	if q.ID != 0 {
+		db.UpdateQueryCategory(q.ID, label)
 	}
 
+	// Step 7: Notify Internal Team
 	notifyTeam(phone, label, originalMsg)
 
+	// Step 6: Confirm to User
+	sendTextMessage(phone, "✅ Got it! Our team will contact you shortly regarding your request.")
+
+	// Step 8: Reset State
 	sessions[phone] = StateMain
 	delete(pendingMessages, phone)
-
-	sendTextMessage(phone, fmt.Sprintf(
-		"✅ *Query Received!*\n\n📂 Category: *%s*\n\nOur team will get back to you shortly. Type *MENU* anytime to explore our services. 🙏",
-		label,
-	))
 }
 
 func notifyTeam(phone, category, message string) {

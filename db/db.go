@@ -38,5 +38,18 @@ func InitDB() error {
 	// Hot-fix: Ensure campaign_id exists in quizzes
 	Pool.Exec(context.Background(), `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id)`)
 
+	// Hot-fix: Create customer_queries table
+	Pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS customer_queries (
+			id SERIAL PRIMARY KEY,
+			phone_number TEXT NOT NULL,
+			user_name TEXT,
+			category TEXT,
+			original_message TEXT,
+			status TEXT DEFAULT 'pending',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+
 	return Pool.Ping(context.Background())
 }
