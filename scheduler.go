@@ -15,10 +15,7 @@ import (
 func InitScheduler() {
 	c := cron.New()
 
-	// Morning Check-In (Internal Test - every 2 mins)
-	c.AddFunc("*/2 * * * *", func() {
-		sendMorningCheckIn(TEST_MODE_NUMBER)
-	})
+	// Morning Check-In (Removed as per user feedback - now integrated into Internal Hub)
 
 	// Daily check for new leads older than 24h (IST 10 AM)
 	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
