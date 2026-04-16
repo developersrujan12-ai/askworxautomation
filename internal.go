@@ -89,8 +89,7 @@ func tryInternalSystem(phone, input, state string) bool {
 }
 
 func sendEmployeeDashboard(phone string) {
-	msg := "🚀 *ASKworX INTERNAL HUB*\n" +
-		"───────────────────────────\n\n" +
+	msg := "🚀 *ASKworX INTERNAL HUB*\n\n" +
 		"Welcome back, *Champion*! 🏆\n\n" +
 		"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
 		"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
