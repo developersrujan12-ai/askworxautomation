@@ -367,8 +367,10 @@ func AdminRoutes() chi.Router {
 
 		go func() {
 			fullMsg := "📢 *O F F I C I A L   B R O A D C A S T* 📢\n\n" +
+				"Team ASKworX,\n\n" +
 				"*" + body.Message + "*\n\n" +
-				"🌐 _ASKworX Global Comm Hub_"
+				"United by innovation, driven by excellence. Let's keep pioneering the future of industry, one milestone at a time. 🌍✨\n\n" +
+				"Regards,\n*ASKworX Team*"
 			for _, p := range targets {
 				sendFAQAnswer(p, fullMsg)
 				time.Sleep(500 * time.Millisecond) // Rate limit
