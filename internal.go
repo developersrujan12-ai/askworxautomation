@@ -100,20 +100,27 @@ func sendEmployeeDashboard(phone string) {
 }
 
 func handleInternalMenu(phone, input string) bool {
-	switch input {
-	case "checkin":
+	// Handle both ID and formatted titles with emojis
+	cleanInput := strings.ToLower(strings.TrimSpace(input))
+	
+	isCheckIn := cleanInput == "checkin" || strings.Contains(cleanInput, "start day")
+	isCheckOut := cleanInput == "checkout" || strings.Contains(cleanInput, "end day")
+	isLeave := cleanInput == "leave_init" || strings.Contains(cleanInput, "apply leave")
+
+	switch {
+	case isCheckIn:
 		db.MarkCheckIn(phone)
 		sendTextMessage(phone, "✅ *Arrival Recorded!*\n\nYou're officially on the clock. 🚀\n\n*What is your primary focus for today?*\n(Please list your main tasks below)")
 		updateSession(phone, "submit_workplan")
 		return true
 
-	case "checkout":
+	case isCheckOut:
 		db.MarkCheckOut(phone)
 		sendTextMessage(phone, "🏢 *Office Mode Off!*\n\nGreat job today! 🎉\n\n*Please submit your EOD Accomplishments below:*")
 		updateSession(phone, "submit_eod")
 		return true
 
-	case "leave_init":
+	case isLeave:
 		msg := "🏝️ *LEAVE REQUEST INITIATED*\n\nPlease select the type of leave you require:"
 		buttons := []map[string]string{
 			{"id": "leave_casual", "title": "🛋️ CASUAL"},
