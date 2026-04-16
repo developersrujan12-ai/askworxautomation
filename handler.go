@@ -34,24 +34,25 @@ const (
 	StateCallback         SessionState = "callback"
 	StateAbout            SessionState = "about"
 	StateIndustries       SessionState = "industries"
+	StateFAQ              SessionState = "faq"
 
 	// Automation module states
-	StateQueryCat         SessionState = "query_category"
+	StateQueryCat SessionState = "query_category"
 
 	// Lead Generation states
 	StateLeadQuoteName     SessionState = "lead_quote_name"
 	StateLeadQuoteCompany  SessionState = "lead_quote_company"
 	StateLeadQuoteInterest SessionState = "lead_quote_interest"
 	StateLeadQuoteDesc     SessionState = "lead_quote_desc"
-	
-	StateLeadCallName      SessionState = "lead_call_name"
-	StateLeadCallCompany   SessionState = "lead_call_company"
-	StateLeadCallTime      SessionState = "lead_call_time"
+
+	StateLeadCallName    SessionState = "lead_call_name"
+	StateLeadCallCompany SessionState = "lead_call_company"
+	StateLeadCallTime    SessionState = "lead_call_time"
 
 	StateLeadServiceCategory SessionState = "lead_service_category"
-	StateLeadServiceName   SessionState = "lead_service_name"
-	StateLeadServiceCompany SessionState = "lead_service_company"
-	StateLeadServiceTime   SessionState = "lead_service_time"
+	StateLeadServiceName     SessionState = "lead_service_name"
+	StateLeadServiceCompany  SessionState = "lead_service_company"
+	StateLeadServiceTime     SessionState = "lead_service_time"
 )
 
 var sessions = map[string]SessionState{}
@@ -111,7 +112,11 @@ func handleMessage(phone, input string) {
 		sendIndustriesPage(phone)
 		return
 	}
-	
+	if text == "faq" || strings.Contains(text, "support") || input == "support_faq" {
+		sendFAQPrompt(phone)
+		return
+	}
+
 	// Engagement Nudge Overrides
 	if text == "flow_service" {
 		startLeadServiceFlow(phone)
@@ -186,6 +191,8 @@ func handleMessage(phone, input string) {
 		handleAboutFlow(phone, text)
 	case StateIndustries:
 		handleIndustriesFlow(phone, text)
+	case StateFAQ:
+		handleFAQFlow(phone, input)
 	case StateQueryCat:
 		// handled by automation dispatcher (tryAutomationModules), shouldn't reach here
 		sendOpeningMessage(phone)
@@ -534,7 +541,7 @@ func startQuoteFlow(phone string) {
 func handleQuoteName(phone, input string) {
 	// If input looks like a button ID (contains underscore), ignore it for name
 	if strings.Contains(input, "_") {
-		return 
+		return
 	}
 	tempQuotes[phone].Name = input
 	sessions[phone] = StateQuoteCompany
@@ -703,7 +710,7 @@ func startLeadServiceFlow(phone string) {
 	sessions[phone] = StateLeadServiceCategory
 	tempLeads[phone] = &TempLead{}
 	body := "Here are our key services. What kind of service are you looking for?"
-	
+
 	buttons := []Button{
 		{ID: "cat_automation", Title: "⚙️ Industrial/PLC"},
 		{ID: "cat_app_dev", Title: "💻 Application Dev"},
@@ -715,19 +722,27 @@ func startLeadServiceFlow(phone string) {
 func handleLeadServiceCategory(phone, input string) {
 	// Map button IDs to human readable strings
 	interest := input
-	if input == "cat_automation" { interest = "Industrial Automation / PLC / ATEX" }
-	if input == "cat_app_dev" { interest = "Application & Software Development (CRM)" }
-	if input == "cat_marketing" { interest = "Digital Marketing & SEO" }
+	if input == "cat_automation" {
+		interest = "Industrial Automation / PLC / ATEX"
+	}
+	if input == "cat_app_dev" {
+		interest = "Application & Software Development (CRM)"
+	}
+	if input == "cat_marketing" {
+		interest = "Digital Marketing & SEO"
+	}
 
 	tempLeads[phone].Interest = interest
 	sessions[phone] = StateLeadServiceName
-	
+
 	body := "Great choice! To connect you with the right expert, may I have your name?"
 	sendTextMessage(phone, body)
 }
 
 func handleLeadServiceName(phone, input string) {
-	if strings.Contains(input, "_") { return }
+	if strings.Contains(input, "_") {
+		return
+	}
 	tempLeads[phone].Name = input
 	sessions[phone] = StateLeadServiceCompany
 	body := "Company name?"
@@ -774,7 +789,9 @@ func startLeadQuoteFlow(phone string) {
 }
 
 func handleLeadQuoteName(phone, input string) {
-	if strings.Contains(input, "_") { return } // ignore button clicks if any
+	if strings.Contains(input, "_") {
+		return
+	} // ignore button clicks if any
 	tempLeads[phone].Name = input
 	sessions[phone] = StateLeadQuoteCompany
 	body := "2. Company Name"
@@ -798,13 +815,13 @@ func handleLeadQuoteInterest(phone, input string) {
 func handleLeadQuoteDesc(phone, input string) {
 	t := tempLeads[phone]
 	t.Description = input
-	
+
 	// Confirmation
 	sendTextMessage(phone, "✅ Thank you! Our team will review your requirements and share a quotation shortly.")
-	
+
 	// Notify Team
 	NotifyTeam(phone, "Quotation", fmt.Sprintf("Interested in: %s\nProject: %s\nCompany: %s\nUser Name: %s", t.Interest, t.Description, t.Company, t.Name))
-	
+
 	sessions[phone] = StateMain
 	delete(tempLeads, phone)
 }
@@ -817,7 +834,9 @@ func startLeadCallFlow(phone string) {
 }
 
 func handleLeadCallName(phone, input string) {
-	if strings.Contains(input, "_") { return } // ignore button clicks if any
+	if strings.Contains(input, "_") {
+		return
+	} // ignore button clicks if any
 	tempLeads[phone].Name = input
 	sessions[phone] = StateLeadCallCompany
 	body := "2. Company Name"
@@ -834,13 +853,13 @@ func handleLeadCallCompany(phone, input string) {
 func handleLeadCallTime(phone, input string) {
 	t := tempLeads[phone]
 	t.Time = input
-	
+
 	// Confirmation
 	sendTextMessage(phone, "✅ Your callback request has been scheduled. Our team will contact you at your preferred time.")
-	
+
 	// Notify Team
 	NotifyTeam(phone, "Callback", fmt.Sprintf("Time: %s\nCompany: %s\nUser Name: %s", t.Time, t.Company, t.Name))
-	
+
 	sessions[phone] = StateMain
 	delete(tempLeads, phone)
 }
@@ -860,4 +879,22 @@ func sendExploreServices(phone string) {
 	}
 
 	sendInteractiveButtons(phone, body, buttons)
+}
+
+func sendFAQPrompt(phone string) {
+	sessions[phone] = StateFAQ
+	msg := "🤖 *ASKworX Support Assistant*\n\nI can answer questions about our services, location, and technical capabilities.\n\n*Go ahead, ask me anything!* (e.g., 'What is SCADA?' or 'Where is your office?')"
+	sendTextMessage(phone, msg)
+}
+
+func handleFAQFlow(phone, input string) {
+	// Let FAQ match try again (this ensures if they type something it gets processed)
+	ans, confident := tryFAQMatch(input)
+	if confident {
+		sendTextMessage(phone, ans)
+		return
+	}
+
+	sendTextMessage(phone, "Sorry, I couldn't find a specific answer for that. But don't worry—I've notified our team to help you!")
+	StartQueryFlow(phone, input)
 }

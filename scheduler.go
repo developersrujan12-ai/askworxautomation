@@ -16,7 +16,7 @@ func InitScheduler() {
 	c := cron.New()
 
 	// Daily 9:00 AM IST Greeting
-	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
+	_, err := c.AddFunc("* * * * *", func() {
 		log.Println("Starting daily IST 9:00 AM greeting...")
 		phones, err := db.GetAllPhoneNumbers()
 		if err != nil {
@@ -26,7 +26,8 @@ func InitScheduler() {
 
 		msg := "🏭 Good Morning from ASKworX! ☀️\n\n\"Built on experience. Delivered with innovation.\"\n\nWe hope you have a productive day ahead. How can we help automate your growth today?\n\n🌐 www.askworx.in"
 		buttons := []Button{
-			{ID: "main_menu", Title: "Open Main Menu 🏠"},
+			{ID: "main_menu", Title: "Main Menu 🏠"},
+			{ID: "support_faq", Title: "Support & FAQ 🤖"},
 		}
 		for _, p := range phones {
 			sendInteractiveButtons(p, msg, buttons)

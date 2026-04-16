@@ -56,7 +56,11 @@ func tryAutomationModules(phone, rawInput string) bool {
 		}
 	}
 
-	// FAQ REMOVED: No more FAQ hijacking as requested.
+	// ── Priority 3: FAQ Knowledge Base ───────────────────────────────────────
+	if ans, confident := tryFAQMatch(rawInput); confident {
+		sendTextMessage(phone, ans)
+		return true
+	}
 
 	// ── Priority 3: Query category selection (ongoing Module 2 session) ──────
 	if sessions[phone] == StateQueryCategory {
@@ -254,6 +258,14 @@ var faqKnowledgeBase = []faqEntry{
 	{
 		keywords: []string{"seo", "digital marketing", "google ads", "linkedin", "social media"},
 		answer:   "We offer data-driven SEO, Google Ads (PPC), LinkedIn B2B lead generation, and social media branding to drive high-intent traffic and paying customers. 📈\n\nType *MENU* to request a free quote.",
+	},
+	{
+		keywords: []string{"atex", "instruments", "hazardous", "explosion proof", "sensor"},
+		answer:   "ASKworX specializes in ATEX-certified instruments for hazardous areas (Ex d, Ex i, etc.). We provide sensors, transmitters, and control systems designed for extreme environments. 🛡️\n\nContact us for specific component datasheets.",
+	},
+	{
+		keywords: []string{"pricing", "cost", "quote", "budget", "how much"},
+		answer:   "Our pricing approach is project-based to ensure you only pay for what you need. We provide a detailed technical & commercial proposal within 24 hours of requirement analysis. 💰\n\nSelect *Get Free Quote* from the menu to start.",
 	},
 }
 
