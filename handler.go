@@ -89,7 +89,7 @@ func handleMessage(phone, input string) {
 	db.SaveContact(phone)
 
 	// --- Module 4: Internal Team System (Priority 0) ---
-	if tryInternalSystem(phone, input, "text") {
+	if tryInternalSystem(phone, input, string(sessions[phone])) {
 		return
 	}
 

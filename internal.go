@@ -11,54 +11,133 @@ const (
 )
 
 // Main dispatcher for Internal System
-func tryInternalSystem(phone, input, inputType string) bool {
-	// STEP 2 & 3: Strict Access Control
-	if phone != TEST_MODE_NUMBER {
+func tryInternalSystem(phone, input, state string) bool {
+	// ── 1. ACCESS CONTROL ──────────────────────────────────────────────────
+	// In production, check db.IsEmployee(phone)
+	// For now, strict TEST group
+	allowed := false
+	if phone == "918310029635" || phone == "8310029635" {
+		allowed = true
+	}
+
+	if !allowed {
 		return false
 	}
 
-	text := strings.ToLower(strings.TrimSpace(input))
-
-	// Catch button clicks
-	if input == "checkin" {
-		handleCheckInClick(phone)
-		return true
-	}
-	if input == "checkout" {
-		handleCheckOutClick(phone)
-		return true
-	}
-	if input == "leave_casual" || input == "leave_sick" || input == "leave_other" {
-		sessions[phone+"_leave_type"] = SessionState(input)
-		sendInternalLeaveDatePrompt(phone)
+	// ── 2. MENU TRIGGER ────────────────────────────────────────────────────
+	lower := strings.ToLower(input)
+	if lower == "hi" || lower == "hey" || lower == "hello" || lower == "menu" || lower == "help" {
+		sendEmployeeDashboard(phone)
+		updateSession(phone, "internal_menu")
 		return true
 	}
 
-	// Commands
-	if text == "leave" {
-		sendInternalLeaveTypePrompt(phone)
-		return true
+	// ── 3. STATE HANDLING ──────────────────────────────────────────────────
+	switch {
+	case state == "internal_menu":
+		return handleInternalMenu(phone, input)
+	case strings.HasPrefix(state, "leave_request"):
+		return handleLeaveRequest(phone, input)
+	case state == "submit_workplan":
+		return handleWorkPlanSubmission(phone, input)
+	case state == "submit_eod":
+		return handleEODSubmission(phone, input)
 	}
 
-	// State-based handling
-	state := sessions[phone]
+	return false
+}
+
+func sendEmployeeDashboard(phone string) {
+	// Fetch current status to show relevant buttons
+	// In a real app, check db for today's check-in status
+	
+	msg := "🚀 *ASKworX INTERNAL HUB*\n───────────────────\n\nWelcome back, *Champion*! 🏆\nWhat are we conquering today?\n\n_Select an action below to proceed:_"
+
+	buttons := []map[string]string{
+		{"id": "checkin", "title": "🚀 START DAY"},
+		{"id": "checkout", "title": "🏢 END DAY"},
+		{"id": "leave_init", "title": "🏝️ APPLY LEAVE"},
+	}
+
+	sendButtons(phone, msg, buttons)
+}
+
+func handleInternalMenu(phone, input string) bool {
+	switch input {
+	case "checkin":
+		db.MarkCheckIn(phone)
+		sendTextMessage(phone, "✅ *Arrival Recorded!*\n\nYou're officially on the clock. 🚀\n\n*What is your primary focus for today?*\n(Please list your main tasks below)")
+		updateSession(phone, "submit_workplan")
+		return true
+
+	case "checkout":
+		db.MarkCheckOut(phone)
+		sendTextMessage(phone, "🏢 *Office Mode Off!*\n\nGreat job today! 🎉\n\n*Please submit your EOD Accomplishments below:*")
+		updateSession(phone, "submit_eod")
+		return true
+
+	case "leave_init":
+		msg := "🏝️ *LEAVE REQUEST INITIATED*\n\nPlease select the type of leave you require:"
+		buttons := []map[string]string{
+			{"id": "leave_casual", "title": "🛋️ CASUAL"},
+			{"id": "leave_sick", "title": "🤒 SICK LEAVE"},
+			{"id": "leave_emergency", "title": "🚨 EMERGENCY"},
+		}
+		sendButtons(phone, msg, buttons)
+		updateSession(phone, "leave_request_type")
+		return true
+	}
+	return false
+}
+
+func handleLeaveRequest(phone, input string) bool {
+	session := getSession(phone)
+	state := session["state"].(string)
+
 	switch state {
-	case StateInternalWorkPlan:
-		handleWorkPlanSubmit(phone, input)
+	case "leave_request_type":
+		if strings.HasPrefix(input, "leave_") {
+			session["leave_type"] = input
+			session["state"] = "leave_request_date"
+			saveSession(phone, session)
+			sendTextMessage(phone, "📅 *What is the date for this leave?*\n(e.g., 20th Oct)")
+			return true
+		}
+	case "leave_request_date":
+		session["leave_date"] = input
+		session["state"] = "leave_request_reason"
+		saveSession(phone, session)
+		sendTextMessage(phone, "📝 *Please provide a brief reason:*")
 		return true
-	case StateInternalEODReport:
-		handleEODReportSubmit(phone, input)
-		return true
-	case StateInternalLeaveDate:
-		sessions[phone+"_leave_date"] = SessionState(input)
-		sendInternalLeaveReasonPrompt(phone)
-		return true
-	case StateInternalLeaveReason:
-		handleLeaveSubmit(phone, input)
+	case "leave_request_reason":
+		lType := fmt.Sprintf("%v", session["leave_type"])
+		lDate := fmt.Sprintf("%v", session["leave_date"])
+		
+		db.SubmitLeave(phone, lType, lDate, input)
+		
+		msg := "🚀 *REQUEST SUBMITTED*\n───────────────────\n\nYour leave request has been sent to management for approval. You will receive a notification once verified.\n\n*Rest up & Recharge!* ⚡"
+		sendFAQAnswer(phone, msg)
+		clearSession(phone)
 		return true
 	}
 
 	return false
+}
+
+func handleWorkPlanSubmission(phone, input string) bool {
+	db.UpdateWorkPlan(phone, input)
+	msg := "🏆 *PLAN ARCHIVED*\n\nYour objectives are locked in. Now, let's make it happen!\n\n_Have a productive day, Champion!_ 🔥"
+	sendFAQAnswer(phone, msg)
+	clearSession(phone)
+	return true
+}
+
+func handleEODSubmission(phone, input string) bool {
+	db.UpdateEODReport(phone, input)
+	msg := "✨ *WRAP UP COMPLETE*\n\nExcellent work today! Your EOD report has been filed.\n\n_Enjoy your evening, you've earned it!_ 🌙"
+	sendFAQAnswer(phone, msg)
+	clearSession(phone)
+	return true
 }
 
 // --- Attendance Flows ---

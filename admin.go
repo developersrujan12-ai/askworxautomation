@@ -225,6 +225,112 @@ func AdminRoutes() chi.Router {
 		json.NewEncoder(w).Encode(analytics)
 	})
 
+	// ── Employee Management ─────────────────────────────────────────────────
+
+	r.Get("/employees", func(w http.ResponseWriter, r *http.Request) {
+		employees, err := db.GetAllEmployees()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(employees)
+	})
+
+	r.Post("/employees", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Name  string `json:"name"`
+			Phone string `json:"phone"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		if err := db.AddEmployee(body.Name, body.Phone); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Delete("/employees/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+		db.DeleteEmployee(id)
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Get("/attendance", func(w http.ResponseWriter, r *http.Request) {
+		records, err := db.GetDetailedAttendance()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(records)
+	})
+
+	r.Get("/leave-requests", func(w http.ResponseWriter, r *http.Request) {
+		requests, err := db.GetLeaveRequests()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(requests)
+	})
+
+	r.Post("/leave-requests/update-status", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     int    `json:"id"`
+			Status string `json:"status"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		phone, err := db.UpdateLeaveStatus(body.ID, body.Status)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Notify employee via WhatsApp
+		msg := fmt.Sprintf("📢 *Leave Request Update*\n\nYour leave request has been *%s* by the management.", body.Status)
+		sendFAQAnswer(phone, msg) // Use the one with Main Menu button
+
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Post("/reminders", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Phone string    `json:"phone"`
+			Desc  string    `json:"desc"`
+			Due   time.Time `json:"due"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		db.CreateReminder(body.Phone, body.Desc, body.Due)
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Post("/announcements", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Message string   `json:"message"`
+			Phones  []string `json:"phones"` // Empty means all
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+
+		targets := body.Phones
+		if len(targets) == 0 {
+			emps, _ := db.GetAllEmployees()
+			for _, e := range emps {
+				targets = append(targets, e.Phone)
+			}
+		}
+
+		go func() {
+			fullMsg := "📢 *OFFICIAL ANNOUNCEMENT*\n────────────────────\n\n" + body.Message
+			for _, p := range targets {
+				sendFAQAnswer(p, fullMsg)
+				time.Sleep(500 * time.Millisecond) // Rate limit
+			}
+		}()
+
+		w.WriteHeader(http.StatusOK)
+	})
+
 	return r
 }
 
