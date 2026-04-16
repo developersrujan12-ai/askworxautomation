@@ -2,8 +2,45 @@ package main
 
 import (
 	"askworx-whatsapp-bot/db"
+	"fmt"
 	"strings"
 )
+
+// Helpers to bridge sessions map in handler.go
+func updateSession(phone, state string) {
+	sessions[phone] = SessionState(state)
+	s := getSession(phone)
+	s["state"] = state
+	saveSession(phone, s)
+}
+
+func clearSession(phone string) {
+	delete(sessions, phone)
+	delete(internalSessions, phone)
+}
+
+// Internal storage for complex employee states
+var internalSessions = map[string]map[string]interface{}{}
+
+func getSession(phone string) map[string]interface{} {
+	if internalSessions[phone] == nil {
+		internalSessions[phone] = make(map[string]interface{})
+	}
+	return internalSessions[phone]
+}
+
+func saveSession(phone string, s map[string]interface{}) {
+	internalSessions[phone] = s
+}
+
+// Bridge to sendInteractiveButtons
+func sendButtons(phone, text string, btns []map[string]string) {
+	var buttons []Button
+	for _, b := range btns {
+		buttons = append(buttons, Button{ID: b["id"], Title: b["title"]})
+	}
+	sendInteractiveButtons(phone, text, buttons)
+}
 
 const (
 	TEST_MODE_NUMBER = "918310029635"
