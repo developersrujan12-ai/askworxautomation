@@ -120,7 +120,7 @@ func GetDetailedAttendance() ([]AttendanceRecord, error) {
 	rows, err := Pool.Query(context.Background(), `
 		SELECT a.id, COALESCE(e.name, 'Unregistered Staff'), a.date, a.check_in, a.check_out, a.work_plan, a.eod_report
 		FROM attendance a
-		LEFT JOIN employees e ON a.phone = e.phone
+		LEFT JOIN employees e ON RIGHT(a.phone, 10) = RIGHT(e.phone, 10)
 		ORDER BY a.date DESC, a.check_in DESC
 	`)
 	if err != nil {
@@ -153,7 +153,7 @@ func GetLeaveRequests() ([]LeaveRequest, error) {
 	rows, err := Pool.Query(context.Background(), `
 		SELECT l.id, COALESCE(e.name, 'Unregistered Staff'), l.phone, l.leave_type, l.leave_date, l.reason, l.status
 		FROM leave_requests l
-		LEFT JOIN employees e ON l.phone = e.phone
+		LEFT JOIN employees e ON RIGHT(l.phone, 10) = RIGHT(e.phone, 10)
 		ORDER BY l.id DESC
 	`)
 	if err != nil {
