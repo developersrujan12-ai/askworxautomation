@@ -16,7 +16,7 @@ func InitScheduler() {
 	c := cron.New()
 
 	// Daily 9:00 AM IST Greeting
-	_, err := c.AddFunc("* * * * *", func() {
+	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
 		log.Println("Starting daily IST 9:00 AM greeting...")
 		phones, err := db.GetAllPhoneNumbers()
 		if err != nil {
