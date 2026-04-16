@@ -118,9 +118,9 @@ type AttendanceRecord struct {
 
 func GetDetailedAttendance() ([]AttendanceRecord, error) {
 	rows, err := Pool.Query(context.Background(), `
-		SELECT a.id, e.name, a.date, a.check_in, a.check_out, a.work_plan, a.eod_report
+		SELECT a.id, COALESCE(e.name, 'Unregistered Staff'), a.date, a.check_in, a.check_out, a.work_plan, a.eod_report
 		FROM attendance a
-		JOIN employees e ON a.phone = e.phone
+		LEFT JOIN employees e ON a.phone = e.phone
 		ORDER BY a.date DESC, a.check_in DESC
 	`)
 	if err != nil {
@@ -151,9 +151,9 @@ type LeaveRequest struct {
 
 func GetLeaveRequests() ([]LeaveRequest, error) {
 	rows, err := Pool.Query(context.Background(), `
-		SELECT l.id, e.name, l.phone, l.leave_type, l.leave_date, l.reason, l.status
+		SELECT l.id, COALESCE(e.name, 'Unregistered Staff'), l.phone, l.leave_type, l.leave_date, l.reason, l.status
 		FROM leave_requests l
-		JOIN employees e ON l.phone = e.phone
+		LEFT JOIN employees e ON l.phone = e.phone
 		ORDER BY l.id DESC
 	`)
 	if err != nil {
