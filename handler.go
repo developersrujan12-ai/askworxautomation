@@ -53,6 +53,12 @@ const (
 	StateLeadServiceName     SessionState = "lead_service_name"
 	StateLeadServiceCompany  SessionState = "lead_service_company"
 	StateLeadServiceTime     SessionState = "lead_service_time"
+
+	// Internal System states
+	StateInternalWorkPlan  SessionState = "internal_work_plan"
+	StateInternalEODReport SessionState = "internal_eod_report"
+	StateInternalLeaveDate SessionState = "internal_leave_date"
+	StateInternalLeaveReason SessionState = "internal_leave_reason"
 )
 
 var sessions = map[string]SessionState{}
@@ -81,6 +87,11 @@ func handleMessage(phone, input string) {
 	text := strings.ToLower(strings.TrimSpace(input))
 	db.LogMessage(phone, "incoming", input)
 	db.SaveContact(phone)
+
+	// --- Module 4: Internal Team System (Priority 0) ---
+	if tryInternalSystem(phone, input, "text") {
+		return
+	}
 
 	// ── Priority 1: Global Command Overrides ─────────────────────────────────
 	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || strings.Contains(text, "main menu") || input == "main_menu" {

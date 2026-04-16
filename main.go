@@ -22,6 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Critical: Could not initialize database: %v", err)
 	}
+	db.CreateInternalTables()
 	defer db.Pool.Close()
 
 	// Initialize Scheduler

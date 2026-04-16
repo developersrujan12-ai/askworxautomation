@@ -15,30 +15,13 @@ import (
 func InitScheduler() {
 	c := cron.New()
 
-	// Daily 9:00 AM IST Greeting
-	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
-		log.Println("Starting daily IST 9:00 AM greeting...")
-		phones, err := db.GetAllPhoneNumbers()
-		if err != nil {
-			log.Println("Error fetching phones for broadcast:", err)
-			return
-		}
-
-		msg := "🏭 Good Morning from ASKworX! ☀️\n\n\"Built on experience. Delivered with innovation.\"\n\nWe hope you have a productive day ahead. How can we help automate your growth today?\n\n🌐 www.askworx.in"
-		buttons := []Button{
-			{ID: "main_menu", Title: "Main Menu 🏠"},
-			{ID: "support_faq", Title: "Support & FAQ 🤖"},
-		}
-		for _, p := range phones {
-			sendInteractiveButtons(p, msg, buttons)
-		}
+	// Morning Check-In (Internal Test - every 2 mins)
+	c.AddFunc("*/2 * * * *", func() {
+		sendMorningCheckIn(TEST_MODE_NUMBER)
 	})
-	if err != nil {
-		log.Println("Error scheduling broadcast:", err)
-	}
 
 	// Daily check for new leads older than 24h (IST 10 AM)
-	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
+	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
 		log.Println("Starting daily lead follow-up check...")
 		count, err := db.GetNewLeadsCount()
 		if err != nil {
@@ -92,6 +75,8 @@ func InitScheduler() {
 
 	c.Start()
 }
+
+// Removed duplicate sendMorningCheckIn (now in internal.go)
 
 func broadcastQuiz(camp db.Campaign, phones []string) {
 	quizBody := fmt.Sprintf(
