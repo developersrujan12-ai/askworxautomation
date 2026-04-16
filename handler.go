@@ -93,6 +93,13 @@ func handleMessage(phone, input string) {
 		return
 	}
 
+	// ── ROLE ISOLATION ──────────────────────────────────────────────────────
+	// If it's the primary employee, do NOT allow any customer flows below
+	if phone == "918310029635" || phone == "8310029635" {
+		sendEmployeeDashboard(phone)
+		return
+	}
+
 	// ── Priority 1: Global Command Overrides ─────────────────────────────────
 	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || strings.Contains(text, "main menu") || input == "main_menu" {
 		sendOpeningMessage(phone)
