@@ -89,14 +89,14 @@ func tryInternalSystem(phone, input, state string) bool {
 }
 
 func sendEmployeeDashboard(phone string) {
-	msg := "🚀 *ASKworX INTERNAL HUB*\n\n" +
+	msg := "*ASKworX INTERNAL HUB*\n\n" +
 		"Welcome back, *Champion*! 🏆\n\n" +
 		"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
 		"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
 		"Ready to make an impact? Select an action below: 👇"
 
 	buttons := []map[string]string{
-		{"id": "checkin", "title": "🚀 START DAY"},
+		{"id": "checkin", "title": " 🏢 START DAY"},
 		{"id": "checkout", "title": "🏢 END DAY"},
 		{"id": "leave_init", "title": "🏝️ APPLY LEAVE"},
 	}
@@ -108,7 +108,7 @@ func sendEmployeeDashboard(phone string) {
 func handleInternalMenu(phone, input string) bool {
 	// Handle both ID and formatted titles with emojis
 	cleanInput := strings.ToLower(strings.TrimSpace(input))
-	
+
 	isCheckIn := cleanInput == "checkin" || strings.Contains(cleanInput, "start day")
 	isCheckOut := cleanInput == "checkout" || strings.Contains(cleanInput, "end day")
 	isLeave := cleanInput == "leave_init" || strings.Contains(cleanInput, "apply leave")
@@ -162,9 +162,9 @@ func handleLeaveRequest(phone, input string) bool {
 	case "leave_request_reason":
 		lType := fmt.Sprintf("%v", session["leave_type"])
 		lDate := fmt.Sprintf("%v", session["leave_date"])
-		
+
 		db.SubmitLeave(phone, lType, lDate, input)
-		
+
 		msg := "🚀 *REQUEST SUBMITTED*\n───────────────────\n\nYour leave request has been sent to management for approval. You will receive a notification once verified.\n\n*Rest up & Recharge!* ⚡"
 		sendFAQAnswer(phone, msg)
 		clearSession(phone)
@@ -262,7 +262,7 @@ func handleLeaveSubmit(phone, reason string) {
 	lType := sessions[phone+"_leave_type"]
 	lDate := sessions[phone+"_leave_date"]
 	db.SubmitLeave(phone, string(lType), string(lDate), reason)
-	
+
 	msg := "📩 Leave request submitted."
 	sessions[phone] = StateMain
 	delete(sessions, phone+"_leave_type")
