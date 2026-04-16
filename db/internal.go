@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 )
@@ -88,8 +89,8 @@ type Employee struct {
 	Role  string `json:"role"`
 }
 
-func GetAllEmployees() ([]Employee, error) {
-	rows, err := Pool.Query(context.Background(), `SELECT id, name, phone, role FROM employees`)
+func GetEmployeesPaginated(limit, offset int) ([]Employee, error) {
+	rows, err := Pool.Query(context.Background(), `SELECT id, name, phone, role FROM employees ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +107,12 @@ func GetAllEmployees() ([]Employee, error) {
 	return employees, nil
 }
 
+func GetTotalEmployeesCount() (int, error) {
+	var count int
+	err := Pool.QueryRow(context.Background(), `SELECT COUNT(*) FROM employees`).Scan(&count)
+	return count, err
+}
+
 type AttendanceRecord struct {
 	ID           int        `json:"id"`
 	EmployeeName string     `json:"employee_name"`
@@ -116,13 +123,49 @@ type AttendanceRecord struct {
 	EODReport    string     `json:"eod_report"`
 }
 
-func GetDetailedAttendance() ([]AttendanceRecord, error) {
-	rows, err := Pool.Query(context.Background(), `
+func GetAllEmployees() ([]Employee, error) {
+	rows, err := Pool.Query(context.Background(), `SELECT id, name, phone, role FROM employees ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var employees []Employee
+	for rows.Next() {
+		var e Employee
+		if err := rows.Scan(&e.ID, &e.Name, &e.Phone, &e.Role); err != nil {
+			return nil, err
+		}
+		employees = append(employees, e)
+	}
+	return employees, nil
+}
+
+func GetAttendancePaginated(limit, offset int, start, end string) ([]AttendanceRecord, error) {
+	query := `
 		SELECT a.id, COALESCE(e.name, 'Unregistered Staff'), a.date, a.check_in, a.check_out, a.work_plan, a.eod_report
 		FROM attendance a
 		LEFT JOIN employees e ON RIGHT(a.phone, 10) = RIGHT(e.phone, 10)
-		ORDER BY a.date DESC, a.check_in DESC
-	`)
+		WHERE 1=1
+	`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND a.date >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND a.date <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	query += fmt.Sprintf(" ORDER BY a.date DESC, a.check_in DESC LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, limit, offset)
+
+	rows, err := Pool.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +182,27 @@ func GetDetailedAttendance() ([]AttendanceRecord, error) {
 	return records, nil
 }
 
+func GetTotalAttendanceCount(start, end string) (int, error) {
+	query := `SELECT COUNT(*) FROM attendance WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND date >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND date <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	var count int
+	err := Pool.QueryRow(context.Background(), query, args...).Scan(&count)
+	return count, err
+}
+
 type LeaveRequest struct {
 	ID            int    `json:"id"`
 	EmployeeName  string `json:"employee_name"`
@@ -149,13 +213,31 @@ type LeaveRequest struct {
 	Status        string `json:"status"`
 }
 
-func GetLeaveRequests() ([]LeaveRequest, error) {
-	rows, err := Pool.Query(context.Background(), `
+func GetLeaveRequestsPaginated(limit, offset int, start, end string) ([]LeaveRequest, error) {
+	query := `
 		SELECT l.id, COALESCE(e.name, 'Unregistered Staff'), l.phone, l.leave_type, l.leave_date, l.reason, l.status
 		FROM leave_requests l
 		LEFT JOIN employees e ON RIGHT(l.phone, 10) = RIGHT(e.phone, 10)
-		ORDER BY l.id DESC
-	`)
+		WHERE 1=1
+	`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND l.leave_date >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND l.leave_date <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	query += fmt.Sprintf(" ORDER BY l.id DESC LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, limit, offset)
+
+	rows, err := Pool.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +254,27 @@ func GetLeaveRequests() ([]LeaveRequest, error) {
 	return requests, nil
 }
 
+func GetTotalLeaveRequestsCount(start, end string) (int, error) {
+	query := `SELECT COUNT(*) FROM leave_requests WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND leave_date >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND leave_date <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	var count int
+	err := Pool.QueryRow(context.Background(), query, args...).Scan(&count)
+	return count, err
+}
+
 func UpdateLeaveStatus(id int, status string) (string, error) {
 	var phone string
 	err := Pool.QueryRow(context.Background(), `
@@ -183,9 +286,118 @@ func UpdateLeaveStatus(id int, status string) (string, error) {
 
 func CreateReminder(phone, desc string, due time.Time) error {
 	_, err := Pool.Exec(context.Background(), `
-		INSERT INTO reminders (employee_phone, description, due_at) VALUES ($1, $2, $3)
+		INSERT INTO reminders (employee_phone, description, due_at, status) VALUES ($1, $2, $3, 'scheduled')
 	`, phone, desc, due)
 	return err
+}
+
+func GetDueReminders() ([]struct {
+	ID    int
+	Phone string
+	Desc  string
+}, error) {
+	rows, err := Pool.Query(context.Background(), `
+		SELECT id, employee_phone, description FROM reminders 
+		WHERE status = 'scheduled' AND due_at <= $1
+	`, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []struct {
+		ID    int
+		Phone string
+		Desc  string
+	}
+	for rows.Next() {
+		var r struct {
+			ID    int
+			Phone string
+			Desc  string
+		}
+		if err := rows.Scan(&r.ID, &r.Phone, &r.Desc); err != nil {
+			return nil, err
+		}
+		res = append(res, r)
+	}
+	return res, nil
+}
+
+func MarkReminderSent(id int) error {
+	_, err := Pool.Exec(context.Background(), `UPDATE reminders SET status = 'sent' WHERE id = $1`, id)
+	return err
+}
+
+type ReminderRecord struct {
+	ID    int       `json:"id"`
+	Phone string    `json:"phone"`
+	Name  string    `json:"name"`
+	Desc  string    `json:"description"`
+	DueAt time.Time `json:"due_at"`
+	Status string    `json:"status"`
+}
+
+func GetReminders(limit, offset int, start, end string) ([]ReminderRecord, error) {
+	query := `
+		SELECT r.id, r.employee_phone, COALESCE(e.name, 'Staff'), r.description, r.due_at, r.status
+		FROM reminders r
+		LEFT JOIN employees e ON r.employee_phone = e.phone
+		WHERE 1=1
+	`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND r.due_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND r.due_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	query += fmt.Sprintf(" ORDER BY r.due_at DESC LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, limit, offset)
+
+	rows, err := Pool.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reminders []ReminderRecord
+	for rows.Next() {
+		var r ReminderRecord
+		if err := rows.Scan(&r.ID, &r.Phone, &r.Name, &r.Desc, &r.DueAt, &r.Status); err != nil {
+			return nil, err
+		}
+		reminders = append(reminders, r)
+	}
+	return reminders, nil
+}
+
+func GetTotalRemindersCount(start, end string) (int, error) {
+	query := `SELECT COUNT(*) FROM reminders WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND due_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND due_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	var count int
+	err := Pool.QueryRow(context.Background(), query, args...).Scan(&count)
+	return count, err
 }
 
 func HasCheckedInToday(phone string) (bool, error) {

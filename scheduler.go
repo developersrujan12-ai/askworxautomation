@@ -36,6 +36,24 @@ func InitScheduler() {
 		log.Println("Error scheduling lead check:", err)
 	}
 
+	// ── Every minute: check for due reminders and notify ─────────────────────
+	_, err = c.AddFunc("* * * * *", func() {
+		due, err := db.GetDueReminders()
+		if err != nil {
+			log.Println("[Scheduler] Error fetching due reminders:", err)
+			return
+		}
+		for _, r := range due {
+			log.Printf("[Scheduler] Sending reminder #%d to %s", r.ID, r.Phone)
+			msg := "🏷️ *ASKworX REMINDER*\n────────────────────\n\n" + r.Desc
+			sendFAQAnswer(r.Phone, msg)
+			db.MarkReminderSent(r.ID)
+		}
+	})
+	if err != nil {
+		log.Println("Error scheduling reminders checker:", err)
+	}
+
 	// ── Every minute: check for due campaigns and broadcast ──────────────────
 	_, err = c.AddFunc("* * * * *", func() {
 		campaigns, err := db.GetDueCampaigns()

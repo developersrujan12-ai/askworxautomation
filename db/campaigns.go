@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -165,6 +166,68 @@ func GetCampaignAnalytics(campaignID int) (CampaignAnalytics, error) {
 		}
 	}
 	return a, nil
+}
+
+func GetCampaignsPaginated(limit, offset int, start, end string) ([]Campaign, error) {
+	query := `SELECT id, type, question, option_a, option_b, option_c, correct_answer, explanation,
+		        youtube_link, image_url, caption, scheduled_at, status, total_sent, created_at
+		 FROM campaigns WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND scheduled_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND scheduled_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	query += fmt.Sprintf(" ORDER BY scheduled_at DESC LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, limit, offset)
+
+	rows, err := Pool.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var campaigns []Campaign
+	for rows.Next() {
+		var c Campaign
+		err := rows.Scan(&c.ID, &c.Type, &c.Question, &c.OptionA, &c.OptionB, &c.OptionC,
+			&c.CorrectAnswer, &c.Explanation, &c.YouTubeLink, &c.ImageURL, &c.Caption,
+			&c.ScheduledAt, &c.Status, &c.TotalSent, &c.CreatedAt)
+		if err != nil {
+			continue
+		}
+		campaigns = append(campaigns, c)
+	}
+	return campaigns, nil
+}
+
+func GetTotalCampaignsCount(start, end string) (int, error) {
+	query := `SELECT COUNT(*) FROM campaigns WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND scheduled_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND scheduled_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	var count int
+	err := Pool.QueryRow(context.Background(), query, args...).Scan(&count)
+	return count, err
 }
 
 // DeactivateAllQuizzes marks all quizzes as inactive before activating a new one.

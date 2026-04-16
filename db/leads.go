@@ -52,6 +52,64 @@ func UpdateLeadStatus(id int, status string) error {
 	return err
 }
 
+func GetLeadsPaginated(limit, offset int, start, end string) ([]Lead, error) {
+	query := `SELECT id, phone, name, company, requirement, contact_phone, status, created_at FROM leads WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND created_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND created_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, limit, offset)
+
+	rows, err := Pool.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	leads := []Lead{}
+	for rows.Next() {
+		var l Lead
+		err := rows.Scan(&l.ID, &l.Phone, &l.Name, &l.Company, &l.Requirement, &l.ContactPhone, &l.Status, &l.CreatedAt)
+		if err != nil {
+			continue
+		}
+		leads = append(leads, l)
+	}
+	return leads, nil
+}
+
+func GetTotalLeadsCount(start, end string) (int, error) {
+	query := `SELECT COUNT(*) FROM leads WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
+
+	if start != "" {
+		query += fmt.Sprintf(" AND created_at >= $%d", argID)
+		args = append(args, start)
+		argID++
+	}
+	if end != "" {
+		query += fmt.Sprintf(" AND created_at <= $%d", argID)
+		args = append(args, end)
+		argID++
+	}
+
+	var count int
+	err := Pool.QueryRow(context.Background(), query, args...).Scan(&count)
+	return count, err
+}
+
 func GetNewLeadsCount() (int, error) {
 	var count int
 	err := Pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM leads WHERE status = 'new'").Scan(&count)

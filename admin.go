@@ -85,11 +85,15 @@ func AdminRoutes() chi.Router {
 	})
 
 	r.Get("/leads", func(w http.ResponseWriter, r *http.Request) {
-		leads, err := db.GetAllLeads()
+		limit, offset, start, end := parseCommonParams(r)
+		leads, err := db.GetLeadsPaginated(limit, offset, start, end)
 		if err != nil {
-			fmt.Printf("Error fetching leads: %v\n", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		json.NewEncoder(w).Encode(leads)
+		count, _ := db.GetTotalLeadsCount(start, end)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": leads, "total": count})
 	})
 
 	r.Post("/leads/update-status", func(w http.ResponseWriter, r *http.Request) {
@@ -145,16 +149,15 @@ func AdminRoutes() chi.Router {
 	// ── Campaign Management ─────────────────────────────────────────────────
 
 	r.Get("/campaigns", func(w http.ResponseWriter, r *http.Request) {
-		campaigns, err := db.GetAllCampaigns()
+		limit, offset, start, end := parseCommonParams(r)
+		campaigns, err := db.GetCampaignsPaginated(limit, offset, start, end)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if campaigns == nil {
-			campaigns = []db.Campaign{}
-		}
+		count, _ := db.GetTotalCampaignsCount(start, end)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(campaigns)
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": campaigns, "total": count})
 	})
 
 	r.Post("/campaigns", func(w http.ResponseWriter, r *http.Request) {
@@ -228,12 +231,15 @@ func AdminRoutes() chi.Router {
 	// ── Employee Management ─────────────────────────────────────────────────
 
 	r.Get("/employees", func(w http.ResponseWriter, r *http.Request) {
-		employees, err := db.GetAllEmployees()
+		limit, offset, _, _ := parseCommonParams(r)
+		employees, err := db.GetEmployeesPaginated(limit, offset)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(employees)
+		count, _ := db.GetTotalEmployeesCount()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": employees, "total": count})
 	})
 
 	r.Post("/employees", func(w http.ResponseWriter, r *http.Request) {
@@ -258,21 +264,27 @@ func AdminRoutes() chi.Router {
 	})
 
 	r.Get("/attendance", func(w http.ResponseWriter, r *http.Request) {
-		records, err := db.GetDetailedAttendance()
+		limit, offset, start, end := parseCommonParams(r)
+		records, err := db.GetAttendancePaginated(limit, offset, start, end)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(records)
+		count, _ := db.GetTotalAttendanceCount(start, end)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": records, "total": count})
 	})
 
 	r.Get("/leave-requests", func(w http.ResponseWriter, r *http.Request) {
-		requests, err := db.GetLeaveRequests()
+		limit, offset, start, end := parseCommonParams(r)
+		requests, err := db.GetLeaveRequestsPaginated(limit, offset, start, end)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(requests)
+		count, _ := db.GetTotalLeaveRequestsCount(start, end)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": requests, "total": count})
 	})
 
 	r.Post("/leave-requests/update-status", func(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +304,18 @@ func AdminRoutes() chi.Router {
 		sendFAQAnswer(phone, msg) // Use the one with Main Menu button
 
 		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Get("/reminders/history", func(w http.ResponseWriter, r *http.Request) {
+		limit, offset, start, end := parseCommonParams(r)
+		reminders, err := db.GetReminders(limit, offset, start, end)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		count, _ := db.GetTotalRemindersCount(start, end)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": reminders, "total": count})
 	})
 
 	r.Post("/reminders", func(w http.ResponseWriter, r *http.Request) {
@@ -332,6 +356,17 @@ func AdminRoutes() chi.Router {
 	})
 
 	return r
+}
+
+func parseCommonParams(r *http.Request) (limit, offset int, start, end string) {
+	fmt.Sscanf(r.URL.Query().Get("limit"), "%d", &limit)
+	fmt.Sscanf(r.URL.Query().Get("offset"), "%d", &offset)
+	if limit <= 0 {
+		limit = 10
+	}
+	start = r.URL.Query().Get("start_date")
+	end = r.URL.Query().Get("end_date")
+	return
 }
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
