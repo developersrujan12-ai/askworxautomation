@@ -45,7 +45,10 @@ func InitScheduler() {
 		}
 		for _, r := range due {
 			log.Printf("[Scheduler] Sending reminder #%d to %s", r.ID, r.Phone)
-			msg := "🏷️ *ASKworX REMINDER*\n────────────────────\n\n" + r.Desc
+			msg := "⚡ *A C T I O N   R E Q U I R E D* ⚡\n\n" +
+				"📌 *" + r.Desc + "*\n\n" +
+				"Let's move the needle today! 🚀\n" +
+				"🏢 _ASKworX Intelligence_"
 			sendFAQAnswer(r.Phone, msg)
 			db.MarkReminderSent(r.ID)
 		}
