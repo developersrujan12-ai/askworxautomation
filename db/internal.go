@@ -458,3 +458,11 @@ func SubmitLeave(phone, lType, date, reason string) error {
 	`, phone, lType, date, reason)
 	return err
 }
+
+// CreateAnnouncementRecord stores a broadcast in the reminders table as 'sent' for history tracking
+func CreateAnnouncementRecord(phone, message string, sentAt time.Time) error {
+	_, err := Pool.Exec(context.Background(), `
+		INSERT INTO reminders (employee_phone, description, due_at, status) VALUES ($1, $2, $3, 'sent')
+	`, phone, message, sentAt)
+	return err
+}

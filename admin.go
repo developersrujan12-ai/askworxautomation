@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -324,8 +325,22 @@ func AdminRoutes() chi.Router {
 			Desc  string    `json:"desc"`
 			Due   time.Time `json:"due"`
 		}
-		json.NewDecoder(r.Body).Decode(&body)
-		db.CreateReminder(body.Phone, body.Desc, body.Due)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			log.Printf("[Reminders] Failed to decode body: %v", err)
+			http.Error(w, "invalid request: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if body.Phone == "" || body.Desc == "" || body.Due.IsZero() {
+			log.Printf("[Reminders] Missing fields: phone=%s desc=%s due=%v", body.Phone, body.Desc, body.Due)
+			http.Error(w, "phone, desc, and due are all required", http.StatusBadRequest)
+			return
+		}
+		log.Printf("[Reminders] Creating reminder for %s at %v: %s", body.Phone, body.Due, body.Desc)
+		if err := db.CreateReminder(body.Phone, body.Desc, body.Due); err != nil {
+			log.Printf("[Reminders] DB error: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -344,6 +359,12 @@ func AdminRoutes() chi.Router {
 			}
 		}
 
+		// Store each broadcast in reminders table as 'sent' for history tracking
+		now := time.Now()
+		for _, p := range targets {
+			db.CreateAnnouncementRecord(p, body.Message, now)
+		}
+
 		go func() {
 			fullMsg := "📢 *OFFICIAL ANNOUNCEMENT*\n────────────────────\n\n" + body.Message
 			for _, p := range targets {
@@ -352,6 +373,7 @@ func AdminRoutes() chi.Router {
 			}
 		}()
 
+		log.Printf("[Announcements] Broadcast queued to %d recipients", len(targets))
 		w.WriteHeader(http.StatusOK)
 	})
 

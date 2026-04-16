@@ -7,21 +7,21 @@ import (
 )
 
 type Campaign struct {
-	ID            int        `json:"id"`
-	Type          string     `json:"type"` // "quiz" or "poster"
-	Question      string     `json:"question"`
-	OptionA       string     `json:"option_a"`
-	OptionB       string     `json:"option_b"`
-	OptionC       string     `json:"option_c"`
-	CorrectAnswer string     `json:"correct_answer"`
-	Explanation   string     `json:"explanation"`
-	YouTubeLink   string     `json:"youtube_link"`
-	ImageURL      string     `json:"image_url"`
-	Caption       string     `json:"caption"`
-	ScheduledAt   time.Time  `json:"scheduled_at"`
-	Status        string     `json:"status"` // scheduled | sent | cancelled
-	TotalSent     int        `json:"total_sent"`
-	CreatedAt     time.Time  `json:"created_at"`
+	ID            int       `json:"id"`
+	Type          string    `json:"type"` // "quiz" or "poster"
+	Question      string    `json:"question"`
+	OptionA       string    `json:"option_a"`
+	OptionB       string    `json:"option_b"`
+	OptionC       string    `json:"option_c"`
+	CorrectAnswer string    `json:"correct_answer"`
+	Explanation   string    `json:"explanation"`
+	YouTubeLink   string    `json:"youtube_link"`
+	ImageURL      string    `json:"image_url"`
+	Caption       string    `json:"caption"`
+	ScheduledAt   time.Time `json:"scheduled_at"`
+	Status        string    `json:"status"` // scheduled | sent | cancelled
+	TotalSent     int       `json:"total_sent"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type QuizResponseDetail struct {
@@ -148,7 +148,7 @@ func GetCampaignAnalytics(campaignID int) (CampaignAnalytics, error) {
 	for rows.Next() {
 		var detail QuizResponseDetail
 		rows.Scan(&detail.Phone, &detail.Name, &detail.Answer, &detail.IsCorrect)
-		
+
 		a.Responses = append(a.Responses, detail)
 		a.TotalAnswers++
 		if detail.IsCorrect {
