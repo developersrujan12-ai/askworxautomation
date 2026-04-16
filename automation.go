@@ -62,7 +62,7 @@ func tryAutomationModules(phone, rawInput string) bool {
 		return true
 	}
 
-	// ── Priority 3: Query category selection (ongoing Module 2 session) ──────
+	// ── Priority 4: Query category selection (ongoing Module 2 session) ──────
 	if sessions[phone] == StateQueryCategory {
 		handleQueryCategoryReply(phone, upper, rawInput)
 		return true

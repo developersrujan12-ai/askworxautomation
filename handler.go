@@ -82,12 +82,7 @@ func handleMessage(phone, input string) {
 	db.LogMessage(phone, "incoming", input)
 	db.SaveContact(phone)
 
-	// ── Priority 1: Automation Modules (Quiz → FAQ → Query) ──────────────────
-	if tryAutomationModules(phone, input) {
-		return
-	}
-
-	// ── Priority 2: Global Command Overrides ─────────────────────────────────
+	// ── Priority 1: Global Command Overrides ─────────────────────────────────
 	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || strings.Contains(text, "main menu") || input == "main_menu" {
 		sendOpeningMessage(phone)
 		return
@@ -114,6 +109,11 @@ func handleMessage(phone, input string) {
 	}
 	if text == "faq" || strings.Contains(text, "support") || input == "support_faq" {
 		sendFAQPrompt(phone)
+		return
+	}
+
+	// ── Priority 2: Automation Modules (Quiz → FAQ → Query) ──────────────────
+	if tryAutomationModules(phone, input) {
 		return
 	}
 
