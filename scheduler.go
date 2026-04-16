@@ -24,9 +24,12 @@ func InitScheduler() {
 			return
 		}
 
-		msg := "🏭 Good Morning from ASKworX! ☀️\n━━━━━━━━━━━━━━━━━━━━━━━━\n\"Built on experience. Delivered with innovation.\"\n\nWe hope you have a productive day ahead. How can we help automate your growth today?\n\nType MENU for services.\n🌐 www.askworx.in"
+		msg := "🏭 Good Morning from ASKworX! ☀️\n\n\"Built on experience. Delivered with innovation.\"\n\nWe hope you have a productive day ahead. How can we help automate your growth today?\n\n🌐 www.askworx.in"
+		buttons := []Button{
+			{ID: "main_menu", Title: "Open Main Menu 🏠"},
+		}
 		for _, p := range phones {
-			sendTextMessage(p, msg)
+			sendInteractiveButtons(p, msg, buttons)
 		}
 	})
 	if err != nil {
