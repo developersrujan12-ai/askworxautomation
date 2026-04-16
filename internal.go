@@ -115,12 +115,22 @@ func handleInternalMenu(phone, input string) bool {
 
 	switch {
 	case isCheckIn:
+		alreadyChecked, _ := db.HasCheckedInToday(phone)
+		if alreadyChecked {
+			sendTextMessage(phone, "👋 *Champion, you've already checked in for today!* 🏆\n\nYou're already on the clock and moving the needle. Keep up the great work! 🚀")
+			return true
+		}
 		db.MarkCheckIn(phone)
 		sendTextMessage(phone, "✅ *Arrival Recorded!*\n\nYou're officially on the clock. 🚀\n\n*What is your primary focus for today?*\n(Please list your main tasks below)")
 		updateSession(phone, "submit_workplan")
 		return true
 
 	case isCheckOut:
+		alreadyOut, _ := db.HasCheckedOutToday(phone)
+		if alreadyOut {
+			sendTextMessage(phone, "🌙 *Champion, you've already wrapped up your day!* ✨\n\nYour EOD reports are filed and missions accomplished. Time to recharge! See you at the top tomorrow. 🚀")
+			return true
+		}
 		db.MarkCheckOut(phone)
 		sendTextMessage(phone, "🏢 *Office Mode Off!*\n\nGreat job today! 🎉\n\n*Please submit your EOD Accomplishments below:*")
 		updateSession(phone, "submit_eod")

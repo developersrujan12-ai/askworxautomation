@@ -188,6 +188,22 @@ func CreateReminder(phone, desc string, due time.Time) error {
 	return err
 }
 
+func HasCheckedInToday(phone string) (bool, error) {
+	var exists bool
+	err := Pool.QueryRow(context.Background(), `
+		SELECT EXISTS(SELECT 1 FROM attendance WHERE phone = $1 AND date = CURRENT_DATE AND check_in IS NOT NULL)
+	`, phone).Scan(&exists)
+	return exists, err
+}
+
+func HasCheckedOutToday(phone string) (bool, error) {
+	var exists bool
+	err := Pool.QueryRow(context.Background(), `
+		SELECT EXISTS(SELECT 1 FROM attendance WHERE phone = $1 AND date = CURRENT_DATE AND check_out IS NOT NULL)
+	`, phone).Scan(&exists)
+	return exists, err
+}
+
 func MarkCheckIn(phone string) error {
 	_, err := Pool.Exec(context.Background(), `
 		INSERT INTO attendance (phone, check_in) 
