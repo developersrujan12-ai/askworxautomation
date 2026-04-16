@@ -69,10 +69,14 @@ func tryInternalSystem(phone, input, state string) bool {
 		return true
 	}
 
-	// ── 3. STATE HANDLING ──────────────────────────────────────────────────
+	// ── 3. STATE HANDLING & DIRECT ACTIONS ─────────────────────────────────
+	// Check for direct button triggers first (high priority)
+	if handleInternalMenu(phone, input) {
+		return true
+	}
+
+	// Then handle complex flows based on state
 	switch {
-	case state == "internal_menu":
-		return handleInternalMenu(phone, input)
 	case strings.HasPrefix(state, "leave_request"):
 		return handleLeaveRequest(phone, input)
 	case state == "submit_workplan":
