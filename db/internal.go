@@ -119,8 +119,8 @@ type AttendanceRecord struct {
 	Date         time.Time  `json:"date"`
 	CheckIn      *time.Time `json:"check_in"`
 	CheckOut     *time.Time `json:"check_out"`
-	WorkPlan     string     `json:"work_plan"`
-	EODReport    string     `json:"eod_report"`
+	WorkPlan     *string    `json:"work_plan"`
+	EODReport    *string    `json:"eod_report"`
 }
 
 func GetAllEmployees() ([]Employee, error) {
