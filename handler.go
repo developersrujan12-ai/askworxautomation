@@ -96,7 +96,16 @@ func handleMessage(phone, input string) {
 	// ── ROLE ISOLATION ──────────────────────────────────────────────────────
 	// If it's the primary employee, do NOT allow any customer flows below
 	if phone == "918310029635" || phone == "8310029635" {
-		sendEmployeeDashboard(phone)
+		// Log internal message for dashboard history
+		db.SaveMessageHistory(phone, text, "inbound")
+		
+		// Map total menu resets to the Internal Hub only
+		if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || input == "main_menu" {
+			sendEmployeeDashboard(phone)
+		} else {
+			// If not handled by tryInternalSystem and not a menu reset, show menu
+			sendEmployeeDashboard(phone)
+		}
 		return
 	}
 

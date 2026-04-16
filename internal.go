@@ -89,10 +89,12 @@ func tryInternalSystem(phone, input, state string) bool {
 }
 
 func sendEmployeeDashboard(phone string) {
-	// Fetch current status to show relevant buttons
-	// In a real app, check db for today's check-in status
-	
-	msg := "🚀 *ASKworX INTERNAL HUB*\n───────────────────\n\nWelcome back, *Champion*! 🏆\nWhat are we conquering today?\n\n_Select an action below to proceed:_"
+	msg := "🚀 *ASKworX INTERNAL HUB*\n" +
+		"───────────────────────────\n\n" +
+		"Welcome back, *Champion*! 🏆\n\n" +
+		"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
+		"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
+		"Ready to make an impact? Select an action below: 👇"
 
 	buttons := []map[string]string{
 		{"id": "checkin", "title": "🚀 START DAY"},
@@ -100,6 +102,7 @@ func sendEmployeeDashboard(phone string) {
 		{"id": "leave_init", "title": "🏝️ APPLY LEAVE"},
 	}
 
+	db.SaveMessageHistory(phone, msg, "outbound")
 	sendButtons(phone, msg, buttons)
 }
 

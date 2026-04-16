@@ -24,6 +24,11 @@ func LogMessage(phone, direction, message string, waID ...string) error {
 	return err
 }
 
+// Alias for consistency
+func SaveMessageHistory(phone, message, direction string) error {
+	return LogMessage(phone, direction, message)
+}
+
 type MessageLog struct {
 	ID        int       `json:"id"`
 	Phone     string    `json:"phone"`
