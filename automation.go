@@ -58,7 +58,7 @@ func tryAutomationModules(phone, rawInput string) bool {
 
 	// ── Priority 3: FAQ Knowledge Base ───────────────────────────────────────
 	if ans, confident := tryFAQMatch(rawInput); confident {
-		sendTextMessage(phone, ans)
+		sendFAQAnswer(phone, ans)
 		return true
 	}
 
@@ -221,19 +221,19 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"plc", "programmable logic controller"},
-		answer:   "We design & commission complete PLC systems — Micro PLCs, Motion Controllers, VFDs, Safety PLCs, and AC Servo Drives for Automotive, Pharma, Food & Beverage, and more. ⚡\n\nType *MENU* to request a free quote.",
+		answer:   "We design & commission complete PLC systems — Micro PLCs, Motion Controllers, VFDs, Safety PLCs, and AC Servo Drives for Automotive, Pharma, Food & Beverage, and more. ⚡",
 	},
 	{
 		keywords: []string{"scada", "hmi", "supervisory control"},
-		answer:   "We develop full SCADA & HMI systems with real-time monitoring, alarming, historical trending, and multi-site remote access using platforms like MC Works64. 🖥️\n\nType *MENU* to request a free quote.",
+		answer:   "We develop full SCADA & HMI systems with real-time monitoring, alarming, historical trending, and multi-site remote access using platforms like MC Works64. 🖥️",
 	},
 	{
 		keywords: []string{"robot", "robotics", "cobot", "collaborative robot"},
-		answer:   "We integrate industrial robots and cobots for welding, assembly, pick & place, and palletizing with full commissioning & after-sales support. 🤖\n\nType *MENU* to request a free quote.",
+		answer:   "We integrate industrial robots and cobots for welding, assembly, pick & place, and palletizing with full commissioning & after-sales support. 🤖",
 	},
 	{
 		keywords: []string{"iiot", "industrial iot", "iot gateway", "mqtt", "opc-ua", "modbus"},
-		answer:   "Our IIoT solutions connect your machines to the cloud via OPC-UA, Modbus, and MQTT with secure edge computing and real-time dashboards. ☁️\n\nType *MENU* to request a free quote.",
+		answer:   "Our IIoT solutions connect your machines to the cloud via OPC-UA, Modbus, and MQTT with secure edge computing and real-time dashboards. ☁️",
 	},
 	{
 		keywords: []string{"atex", "hazardous area", "explosion proof"},
@@ -241,7 +241,7 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"price", "pricing", "cost", "how much", "quote", "quotation"},
-		answer:   "Our pricing is tailored to your project scope. We deliver a detailed proposal within 24 hours. 💬\n\nType *MENU* → *Get Free Quote* to get started.",
+		answer:   "Our pricing is tailored to your project scope. We deliver a detailed proposal within 24 hours. 💬",
 	},
 	{
 		keywords: []string{"contact", "phone number", "email", "address", "office", "location"},
@@ -249,15 +249,23 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"whatsapp bot", "chatbot", "wa bot", "automation bot"},
-		answer:   "We build AI-powered WhatsApp Business bots with CRM integration, lead capture, broadcast scheduling, and a multi-agent admin dashboard. 📱\n\nType *MENU* to request a free quote.",
+		answer:   "We build AI-powered WhatsApp Business bots with CRM integration, lead capture, broadcast scheduling, and a multi-agent admin dashboard. 📱",
 	},
 	{
 		keywords: []string{"website", "web app", "mobile app", "app development", "flutter", "react"},
-		answer:   "We build Progressive Web Apps, mobile apps (Flutter/React Native), corporate sites, and enterprise ERP/MES software. 🌐\n\nType *MENU* to request a free quote.",
+		answer:   "We build Progressive Web Apps, mobile apps (Flutter/React Native), corporate sites, and enterprise ERP/MES software. 🌐",
+	},
+	{
+		keywords: []string{"thanks", "thank you", "ty", "thx", "appreciate"},
+		answer:   "You're very welcome! 🙏 Let me know if there's anything else I can help you with.",
+	},
+	{
+		keywords: []string{"okay", "ok", "fine", "got it", "cool", "sure"},
+		answer:   "Great! 👍 Let me know if you'd like to explore our solutions again.",
 	},
 	{
 		keywords: []string{"seo", "digital marketing", "google ads", "linkedin", "social media"},
-		answer:   "We offer data-driven SEO, Google Ads (PPC), LinkedIn B2B lead generation, and social media branding to drive high-intent traffic and paying customers. 📈\n\nType *MENU* to request a free quote.",
+		answer:   "We offer data-driven SEO, Google Ads (PPC), LinkedIn B2B lead generation, and social media branding to drive high-intent traffic and paying customers. 📈",
 	},
 	{
 		keywords: []string{"atex", "instruments", "hazardous", "explosion proof", "sensor"},

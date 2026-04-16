@@ -888,13 +888,28 @@ func sendFAQPrompt(phone string) {
 }
 
 func handleFAQFlow(phone, input string) {
-	// Let FAQ match try again (this ensures if they type something it gets processed)
+	// Let FAQ match try again
 	ans, confident := tryFAQMatch(input)
 	if confident {
-		sendTextMessage(phone, ans)
+		sendFAQAnswer(phone, ans)
+		sessions[phone] = StateMain // Reset to main after a successful FAQ match
 		return
 	}
+	
+	// Only trigger support flow for messages longer than 3 chars (prevents "okay", "what" spam)
+	if len(strings.TrimSpace(input)) > 3 {
+		sendTextMessage(phone, "Let me connect you with our team for this.")
+		StartQueryFlow(phone, input)
+	} else {
+		// Just guide them back
+		sendTextMessage(phone, "I'm sorry, I didn't quite catch that. Could you please provide a few more details so I can help you better?")
+		sessions[phone] = StateMain // Reset to main if too short to be a valid query
+	}
+}
 
-	sendTextMessage(phone, "Sorry, I couldn't find a specific answer for that. But don't worry—I've notified our team to help you!")
-	StartQueryFlow(phone, input)
+func sendFAQAnswer(phone, answer string) {
+	buttons := []Button{
+		{ID: "main_menu", Title: "Main Menu 🏠"},
+	}
+	sendInteractiveButtons(phone, answer, buttons)
 }
