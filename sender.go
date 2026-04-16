@@ -123,6 +123,14 @@ func sendToMeta(payload map[string]interface{}, to, logMsg string) {
 	url := fmt.Sprintf("https://graph.facebook.com/v17.0/%s/messages", os.Getenv("PHONE_NUMBER_ID"))
 	token := os.Getenv("ACCESS_TOKEN")
 
+	// Normalize phone number for Meta (must include country code, no +, no spaces)
+	normalizedTo := strings.ReplaceAll(to, "+", "")
+	normalizedTo = strings.ReplaceAll(normalizedTo, " ", "")
+	if len(normalizedTo) == 10 {
+		normalizedTo = "91" + normalizedTo
+	}
+	payload["to"] = normalizedTo
+
 	jsonPayload, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	req.Header.Set("Content-Type", "application/json")
