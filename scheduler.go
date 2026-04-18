@@ -13,10 +13,16 @@ import (
 )
 
 func InitScheduler() {
-	c := cron.New()
+	loc, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		log.Println("Error loading location Asia/Kolkata:", err)
+		loc = time.UTC // Fallback
+	}
+
+	c := cron.New(cron.WithLocation(loc))
 
 	// Morning Check-in for Internal Team (Nudge at 9 AM IST)
-	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
+	_, err = c.AddFunc("0 9 * * *", func() {
 		emps, err := db.GetAllEmployees()
 		if err != nil {
 			return
@@ -33,7 +39,7 @@ func InitScheduler() {
 	})
 
 	// Good Morning greeting for Users/Customers (Nudge at 9:30 AM IST)
-	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 30 9 * * *", func() {
+	_, err = c.AddFunc("30 9 * * *", func() {
 		phones, err := db.GetAllPhoneNumbers()
 		if err != nil {
 			return
@@ -54,7 +60,7 @@ func InitScheduler() {
 	})
 
 	// Daily check for new leads older than 24h (IST 10 AM)
-	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
+	_, err = c.AddFunc("0 10 * * *", func() {
 		log.Println("Starting daily lead follow-up check...")
 		count, err := db.GetNewLeadsCount()
 		if err != nil {
