@@ -21,6 +21,7 @@ type WebhookRequest struct {
 				Messages []struct {
 					ID   string `json:"id"`
 					From string `json:"from"`
+					Type string `json:"type"`
 					Text *struct {
 						Body string `json:"body"`
 					} `json:"text,omitempty"`
@@ -30,6 +31,10 @@ type WebhookRequest struct {
 							Title string `json:"title"`
 						} `json:"button_reply"`
 					} `json:"interactive,omitempty"`
+					Location *struct {
+						Latitude  float64 `json:"latitude"`
+						Longitude float64 `json:"longitude"`
+					} `json:"location,omitempty"`
 				} `json:"messages"`
 			} `json:"value"`
 		} `json:"changes"`
@@ -72,7 +77,13 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 				for _, msg := range change.Value.Messages {
 					phone := msg.From
 					text := ""
-					if msg.Text != nil {
+					var lat, lng float64
+
+					if msg.Type == "location" && msg.Location != nil {
+						lat = msg.Location.Latitude
+						lng = msg.Location.Longitude
+						text = "LOCATION_DATA"
+					} else if msg.Text != nil {
 						text = msg.Text.Body
 					} else if msg.Interactive != nil {
 						text = msg.Interactive.ButtonReply.ID
@@ -81,7 +92,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 					if text != "" {
 						log.Printf("[Webhook] Incoming from %s: %s", phone, text)
 						db.LogMessage(phone, "incoming", text, msg.ID)
-						go handleMessage(phone, text)
+						go handleMessage(phone, text, lat, lng)
 					}
 				}
 			}

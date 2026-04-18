@@ -15,10 +15,39 @@ import (
 func InitScheduler() {
 	c := cron.New()
 
-	// Morning Check-In (Removed as per user feedback - now integrated into Internal Hub)
+	// Morning Check-in for Internal Team (Nudge at 9 AM IST)
+	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 9 * * *", func() {
+		emps, err := db.GetAllEmployees()
+		if err != nil {
+			return
+		}
+		for _, e := range emps {
+			msg := fmt.Sprintf("🌅 *Good Morning, %s!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀", e.Name)
+			sendEmployeeDashboard(e.Phone) // This will trigger the dashboard buttons
+			sendTextMessage(e.Phone, msg)
+		}
+	})
+
+	// Good Morning greeting for Users/Customers (Nudge at 9:30 AM IST)
+	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 30 9 * * *", func() {
+		phones, err := db.GetAllPhoneNumbers()
+		if err != nil {
+			return
+		}
+		for _, p := range phones {
+			// Skip if they are an employee
+			isEmp, _ := db.IsEmployee(p)
+			if isEmp {
+				continue
+			}
+
+			msg := "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀"
+			sendTextMessage(p, msg)
+		}
+	})
 
 	// Daily check for new leads older than 24h (IST 10 AM)
-	_, err := c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
+	_, err = c.AddFunc("CRON_TZ=Asia/Kolkata 0 10 * * *", func() {
 		log.Println("Starting daily lead follow-up check...")
 		count, err := db.GetNewLeadsCount()
 		if err != nil {

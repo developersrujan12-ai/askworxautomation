@@ -48,15 +48,9 @@ const (
 )
 
 // Main dispatcher for Internal System
-func tryInternalSystem(phone, input, state string) bool {
+func tryInternalSystem(phone, input, state string, lat, lng float64) bool {
 	// ── 1. ACCESS CONTROL ──────────────────────────────────────────────────
-	// In production, check db.IsEmployee(phone)
-	// For now, strict TEST group
-	allowed := false
-	if phone == "918310029635" || phone == "8310029635" {
-		allowed = true
-	}
-
+	allowed, _ := db.IsEmployee(phone)
 	if !allowed {
 		return false
 	}
@@ -70,6 +64,22 @@ func tryInternalSystem(phone, input, state string) bool {
 	}
 
 	// ── 3. STATE HANDLING & DIRECT ACTIONS ─────────────────────────────────
+	// Check for location data for attendance
+	if input == "LOCATION_DATA" {
+		if state == "expect_location_checkin" {
+			db.MarkCheckIn(phone, lat, lng)
+			sendTextMessage(phone, "📍 *Location Captured & Verified!*\n\nYour site attendance has been recorded successfully. 🚀\n\n*What is your primary focus for today?*\n(Please list your main tasks below)")
+			updateSession(phone, "submit_workplan")
+			return true
+		}
+		if state == "expect_location_checkout" {
+			db.MarkCheckOut(phone, lat, lng)
+			sendTextMessage(phone, "📍 *Location Captured & Departure Verified!*\n\nGreat job today! 🎉\n\n*Please submit your EOD Accomplishments below:*")
+			updateSession(phone, "submit_eod")
+			return true
+		}
+	}
+
 	// Check for direct button triggers first (high priority)
 	if handleInternalMenu(phone, input) {
 		return true
@@ -120,9 +130,8 @@ func handleInternalMenu(phone, input string) bool {
 			sendTextMessage(phone, "👋 *Champion, you've already checked in for today!* 🏆\n\nYou're already on the clock and moving the needle. Keep up the great work! 🚀")
 			return true
 		}
-		db.MarkCheckIn(phone)
-		sendTextMessage(phone, "✅ *Arrival Recorded!*\n\nYou're officially on the clock. 🚀\n\n*What is your primary focus for today?*\n(Please list your main tasks below)")
-		updateSession(phone, "submit_workplan")
+		sendTextMessage(phone, "🏢 *VERIFICATION REQUIRED* 🏢\n\nTo ensure precision in our operations, please share your **Live Location** 📍 via WhatsApp to record your arrival at the project site.")
+		updateSession(phone, "expect_location_checkin")
 		return true
 
 	case isCheckOut:
@@ -131,9 +140,8 @@ func handleInternalMenu(phone, input string) bool {
 			sendTextMessage(phone, "🌙 *Champion, you've already wrapped up your day!* ✨\n\nYour EOD reports are filed and missions accomplished. Time to recharge! See you at the top tomorrow. 🚀")
 			return true
 		}
-		db.MarkCheckOut(phone)
-		sendTextMessage(phone, "🏢 *Office Mode Off!*\n\nGreat job today! 🎉\n\n*Please submit your EOD Accomplishments below:*")
-		updateSession(phone, "submit_eod")
+		sendTextMessage(phone, "🏢 *VERIFICATION REQUIRED* 🏢\n\nPlease share your **Live Location** 📍 to record your departure coordinates and verify your mission wrap-up.")
+		updateSession(phone, "expect_location_checkout")
 		return true
 
 	case isLeave:

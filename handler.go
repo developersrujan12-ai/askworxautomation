@@ -83,19 +83,20 @@ var tempQuotes = map[string]*TempQuote{}
 var tempLeads = map[string]*TempLead{}
 var tempCallbacks = map[string]string{}
 
-func handleMessage(phone, input string) {
+func handleMessage(phone, input string, lat, lng float64) {
 	text := strings.ToLower(strings.TrimSpace(input))
 	db.LogMessage(phone, "incoming", input)
 	db.SaveContact(phone)
 
 	// --- Module 4: Internal Team System (Priority 0) ---
-	if tryInternalSystem(phone, input, string(sessions[phone])) {
+	if tryInternalSystem(phone, input, string(sessions[phone]), lat, lng) {
 		return
 	}
 
 	// ── ROLE ISOLATION ──────────────────────────────────────────────────────
-	// If it's the primary employee, do NOT allow any customer flows below
-	if phone == "918310029635" || phone == "8310029635" {
+	// If it's a registered employee, do NOT allow any customer flows below
+	isEmp, _ := db.IsEmployee(phone)
+	if isEmp {
 		// Log internal message for dashboard history
 		db.SaveMessageHistory(phone, text, "inbound")
 		

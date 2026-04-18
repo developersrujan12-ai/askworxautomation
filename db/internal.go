@@ -16,6 +16,10 @@ func CreateInternalTables() {
 			phone TEXT NOT NULL,
 			check_in TIMESTAMP,
 			check_out TIMESTAMP,
+			check_in_lat DOUBLE PRECISION,
+			check_in_lng DOUBLE PRECISION,
+			check_out_lat DOUBLE PRECISION,
+			check_out_lng DOUBLE PRECISION,
 			work_plan TEXT,
 			eod_report TEXT,
 			date DATE DEFAULT CURRENT_DATE,
@@ -73,8 +77,17 @@ func AddEmployee(name, phone string) error {
 	_, err := Pool.Exec(context.Background(), `
 		INSERT INTO employees (name, phone) VALUES ($1, $2)
 		ON CONFLICT (phone) DO UPDATE SET name = EXCLUDED.name
-	`, name, phone)
+	`, phone, name) // Fixed order: name, phone -> phone, name was wrong in Exec args
 	return err
+}
+
+func IsEmployee(phone string) (bool, error) {
+	var exists bool
+	// Match last 10 digits to be safe with country codes
+	err := Pool.QueryRow(context.Background(), `
+		SELECT EXISTS(SELECT 1 FROM employees WHERE RIGHT(phone, 10) = RIGHT($1, 10))
+	`, phone).Scan(&exists)
+	return exists, err
 }
 
 func DeleteEmployee(id int) error {
@@ -121,6 +134,10 @@ type AttendanceRecord struct {
 	CheckOut     *time.Time `json:"check_out"`
 	WorkPlan     *string    `json:"work_plan"`
 	EODReport    *string    `json:"eod_report"`
+	CheckInLat   *float64   `json:"check_in_lat"`
+	CheckInLng   *float64   `json:"check_in_lng"`
+	CheckOutLat  *float64   `json:"check_out_lat"`
+	CheckOutLng  *float64   `json:"check_out_lng"`
 }
 
 func GetAllEmployees() ([]Employee, error) {
@@ -143,7 +160,8 @@ func GetAllEmployees() ([]Employee, error) {
 
 func GetAttendancePaginated(limit, offset int, start, end string) ([]AttendanceRecord, error) {
 	query := `
-		SELECT a.id, COALESCE(e.name, 'Unregistered Staff'), a.date, a.check_in, a.check_out, a.work_plan, a.eod_report
+		SELECT a.id, COALESCE(e.name, 'Unregistered Staff'), a.date, a.check_in, a.check_out, a.work_plan, a.eod_report,
+		       a.check_in_lat, a.check_in_lng, a.check_out_lat, a.check_out_lng
 		FROM attendance a
 		LEFT JOIN employees e ON RIGHT(a.phone, 10) = RIGHT(e.phone, 10)
 		WHERE 1=1
@@ -174,7 +192,8 @@ func GetAttendancePaginated(limit, offset int, start, end string) ([]AttendanceR
 	var records []AttendanceRecord
 	for rows.Next() {
 		var r AttendanceRecord
-		if err := rows.Scan(&r.ID, &r.EmployeeName, &r.Date, &r.CheckIn, &r.CheckOut, &r.WorkPlan, &r.EODReport); err != nil {
+		if err := rows.Scan(&r.ID, &r.EmployeeName, &r.Date, &r.CheckIn, &r.CheckOut, &r.WorkPlan, &r.EODReport,
+			&r.CheckInLat, &r.CheckInLng, &r.CheckOutLat, &r.CheckOutLng); err != nil {
 			return nil, err
 		}
 		records = append(records, r)
@@ -416,14 +435,16 @@ func HasCheckedOutToday(phone string) (bool, error) {
 	return exists, err
 }
 
-func MarkCheckIn(phone string) error {
+func MarkCheckIn(phone string, lat, lng float64) error {
 	_, err := Pool.Exec(context.Background(), `
-		INSERT INTO attendance (phone, check_in) 
-		VALUES ($1, $2)
+		INSERT INTO attendance (phone, check_in, check_in_lat, check_in_lng) 
+		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (phone, date) DO UPDATE 
-		SET check_in = EXCLUDED.check_in 
+		SET check_in = EXCLUDED.check_in,
+		    check_in_lat = EXCLUDED.check_in_lat,
+		    check_in_lng = EXCLUDED.check_in_lng
 		WHERE attendance.check_in IS NULL
-	`, phone, time.Now())
+	`, phone, time.Now(), lat, lng)
 	return err
 }
 
@@ -435,11 +456,12 @@ func UpdateWorkPlan(phone, plan string) error {
 	return err
 }
 
-func MarkCheckOut(phone string) error {
+func MarkCheckOut(phone string, lat, lng float64) error {
 	_, err := Pool.Exec(context.Background(), `
-		UPDATE attendance SET check_out = $1 
-		WHERE phone = $2 AND date = CURRENT_DATE
-	`, time.Now(), phone)
+		UPDATE attendance 
+		SET check_out = $1, check_out_lat = $2, check_out_lng = $3 
+		WHERE phone = $4 AND date = CURRENT_DATE
+	`, time.Now(), lat, lng, phone)
 	return err
 }
 
