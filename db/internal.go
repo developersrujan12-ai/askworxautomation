@@ -30,6 +30,14 @@ func CreateInternalTables() {
 		log.Fatal("Error creating attendance table:", err)
 	}
 
+	// Dynamic column migration for existing tables
+	_, _ = Pool.Exec(context.Background(), `
+		ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_in_lat DOUBLE PRECISION;
+		ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_in_lng DOUBLE PRECISION;
+		ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_out_lat DOUBLE PRECISION;
+		ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_out_lng DOUBLE PRECISION;
+	`)
+
 	// Leaves table
 	_, err = Pool.Exec(context.Background(), `
 		CREATE TABLE IF NOT EXISTS leave_requests (
