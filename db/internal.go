@@ -144,7 +144,7 @@ func AddEmployee(name, phone string) error {
 	_, err := Pool.Exec(context.Background(), `
 		INSERT INTO employees (name, phone) VALUES ($1, $2)
 		ON CONFLICT (phone) DO UPDATE SET name = EXCLUDED.name
-	`, phone, name) // Fixed order: name, phone -> phone, name was wrong in Exec args
+	`, name, phone)
 	return err
 }
 
