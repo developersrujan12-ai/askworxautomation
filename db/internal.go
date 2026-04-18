@@ -79,6 +79,65 @@ func CreateInternalTables() {
 	if err != nil {
 		log.Fatal("Error creating reminders table:", err)
 	}
+
+	// Settings table
+	_, err = Pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS settings (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
+		)
+	`)
+	if err != nil {
+		log.Fatal("Error creating settings table:", err)
+	}
+
+	// Seed default settings
+	seedSettings()
+}
+
+func seedSettings() {
+	defaults := map[string]string{
+		"greeting_employee": "🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀",
+		"greeting_customer": "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀",
+		"hub_welcome":       "*ASKworX INTERNAL HUB*\n\nWelcome back, *Champion*! 🏆\n\nAt ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\nYour expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\nReady to make an impact? Select an action below: 👇",
+		"btn_start_day":     "🏢 START DAY",
+		"btn_end_day":       "🏢 END DAY",
+		"btn_apply_leave":   "🏝️ APPLY LEAVE",
+	}
+
+	for k, v := range defaults {
+		Pool.Exec(context.Background(), "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING", k, v)
+	}
+}
+
+func GetSetting(key string) string {
+	var val string
+	err := Pool.QueryRow(context.Background(), "SELECT value FROM settings WHERE key = $1", key).Scan(&val)
+	if err != nil {
+		return ""
+	}
+	return val
+}
+
+func UpdateSetting(key, value string) error {
+	_, err := Pool.Exec(context.Background(), "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", key, value)
+	return err
+}
+
+func GetAllSettings() (map[string]string, error) {
+	rows, err := Pool.Query(context.Background(), "SELECT key, value FROM settings")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make(map[string]string)
+	for rows.Next() {
+		var k, v string
+		rows.Scan(&k, &v)
+		res[k] = v
+	}
+	return res, nil
 }
 
 func AddEmployee(name, phone string) error {

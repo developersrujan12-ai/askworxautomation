@@ -381,6 +381,27 @@ func AdminRoutes() chi.Router {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// ── BOT SETTINGS ─────────────────────────────────────────────────────────
+	r.Get("/settings", func(w http.ResponseWriter, r *http.Request) {
+		settings, err := db.GetAllSettings()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(settings)
+	})
+
+	r.Post("/settings", func(w http.ResponseWriter, r *http.Request) {
+		var payload map[string]string
+		json.NewDecoder(r.Body).Decode(&payload)
+
+		for k, v := range payload {
+			db.UpdateSetting(k, v)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
 	return r
 }
 

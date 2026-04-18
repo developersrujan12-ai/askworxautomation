@@ -99,16 +99,32 @@ func tryInternalSystem(phone, input, state string, lat, lng float64) bool {
 }
 
 func sendEmployeeDashboard(phone string) {
-	msg := "*ASKworX INTERNAL HUB*\n\n" +
-		"Welcome back, *Champion*! 🏆\n\n" +
-		"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
-		"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
-		"Ready to make an impact? Select an action below: 👇"
+	msg := db.GetSetting("hub_welcome")
+	if msg == "" {
+		msg = "*ASKworX INTERNAL HUB*\n\n" +
+			"Welcome back, *Champion*! 🏆\n\n" +
+			"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
+			"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
+			"Ready to make an impact? Select an action below: 👇"
+	}
+
+	btnStart := db.GetSetting("btn_start_day")
+	if btnStart == "" {
+		btnStart = " 🏢 START DAY"
+	}
+	btnEnd := db.GetSetting("btn_end_day")
+	if btnEnd == "" {
+		btnEnd = "🏢 END DAY"
+	}
+	btnLeave := db.GetSetting("btn_apply_leave")
+	if btnLeave == "" {
+		btnLeave = "🏝️ APPLY LEAVE"
+	}
 
 	buttons := []map[string]string{
-		{"id": "checkin", "title": " 🏢 START DAY"},
-		{"id": "checkout", "title": "🏢 END DAY"},
-		{"id": "leave_init", "title": "🏝️ APPLY LEAVE"},
+		{"id": "checkin", "title": btnStart},
+		{"id": "checkout", "title": btnEnd},
+		{"id": "leave_init", "title": btnLeave},
 	}
 
 	db.SaveMessageHistory(phone, msg, "outbound")

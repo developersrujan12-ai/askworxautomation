@@ -22,7 +22,11 @@ func InitScheduler() {
 			return
 		}
 		for _, e := range emps {
-			msg := fmt.Sprintf("🌅 *Good Morning, %s!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀", e.Name)
+			template := db.GetSetting("greeting_employee")
+			if template == "" {
+				template = "🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀"
+			}
+			msg := strings.ReplaceAll(template, "{{name}}", e.Name)
 			sendEmployeeDashboard(e.Phone) // This will trigger the dashboard buttons
 			sendTextMessage(e.Phone, msg)
 		}
@@ -41,7 +45,10 @@ func InitScheduler() {
 				continue
 			}
 
-			msg := "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀"
+			msg := db.GetSetting("greeting_customer")
+			if msg == "" {
+				msg = "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀"
+			}
 			sendTextMessage(p, msg)
 		}
 	})
