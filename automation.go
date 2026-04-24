@@ -82,9 +82,9 @@ func handleQuizResponse(phone, answer string, quiz *db.Quiz) {
 
 	var msg string
 	if isCorrect {
-		msg = "🎉 *Thank you for participating in the ASKworX Weekly Knowledge Challenge!*\n\n✅ *Awesome! That's the correct answer.*\n\nWould you like to see the detailed explanation? Tap below! 👇"
+		msg = fmt.Sprintf("🎉 *Thank you for participating in the %s Weekly Knowledge Challenge!*\n\n✅ *Awesome! That's the correct answer.*\n\nWould you like to see the detailed explanation? Tap below! 👇", os.Getenv("COMPANY_NAME"))
 	} else {
-		msg = "🎉 *Thank you for participating in the ASKworX Weekly Knowledge Challenge!*\n\n❌ *Oops! That was a tricky one, but it's not quite correct.*\n\nWould you like to see the right answer and explanation? Tap below! 👇"
+		msg = fmt.Sprintf("🎉 *Thank you for participating in the %s Weekly Knowledge Challenge!*\n\n❌ *Oops! That was a tricky one, but it's not quite correct.*\n\nWould you like to see the right answer and explanation? Tap below! 👇", os.Getenv("COMPANY_NAME"))
 	}
 
 	// Store quiz and update state
@@ -132,7 +132,7 @@ func StartQueryFlow(phone, originalMessage string) {
 	log.Printf("[Support] Starting assistant flow for %s", phone)
 
 	// Step 2: Auto Response
-	greeting := "Hi! 👋 Thanks for reaching out to *ASKworX*.\n\nWe've received your message and our team will assist you shortly."
+	greeting := fmt.Sprintf("Hi! 👋 Thanks for reaching out to *%s*.\n\nWe've received your message and our team will assist you shortly.", os.Getenv("COMPANY_NAME"))
 	sendTextMessage(phone, greeting)
 
 	// Step 3: Send Button Menu
@@ -217,7 +217,7 @@ type faqEntry struct {
 var faqKnowledgeBase = []faqEntry{
 	{
 		keywords: []string{"what do you do", "what is askworx", "who are you", "about askworx"},
-		answer:   "ASKworX Smart Automation LLP provides end-to-end industrial automation — PLC & SCADA engineering, IIoT, cloud analytics, robotics, and digital software. 🏭\n\n🌐 www.askworx.in | 📞 +91 9187458714",
+		answer:   fmt.Sprintf("%s provides end-to-end industrial automation — PLC & SCADA engineering, IIoT, cloud analytics, robotics, and digital software. 🏭\n\n🌐 www.askworx.in | 📞 +%s", os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE")),
 	},
 	{
 		keywords: []string{"plc", "programmable logic controller"},
@@ -237,7 +237,7 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"atex", "hazardous area", "explosion proof"},
-		answer:   "We supply and support ATEX-certified instruments for hazardous area classifications. Contact our team for specific product recommendations. 🔒\n\n📞 +91 9187458714",
+		answer:   fmt.Sprintf("We supply and support ATEX-certified instruments for hazardous area classifications. Contact our team for specific product recommendations. 🔒\n\n📞 +%s", os.Getenv("ADMIN_PHONE")),
 	},
 	{
 		keywords: []string{"price", "pricing", "cost", "how much", "quote", "quotation"},
@@ -245,7 +245,7 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"contact", "phone number", "email", "address", "office", "location"},
-		answer:   "📞 +91 9187458714\n📧 contact@askworx.in\n🌐 www.askworx.in\n📍 1381, 6th Main Road, RR Nagar, Bangalore — 560098",
+		answer:   fmt.Sprintf("📞 +%s\n📧 contact@askworx.in\n🌐 www.askworx.in\n📍 1381, 6th Main Road, RR Nagar, Bangalore — 560098", os.Getenv("ADMIN_PHONE")),
 	},
 	{
 		keywords: []string{"whatsapp bot", "chatbot", "wa bot", "automation bot"},
@@ -269,7 +269,7 @@ var faqKnowledgeBase = []faqEntry{
 	},
 	{
 		keywords: []string{"atex", "instruments", "hazardous", "explosion proof", "sensor"},
-		answer:   "ASKworX specializes in ATEX-certified instruments for hazardous areas (Ex d, Ex i, etc.). We provide sensors, transmitters, and control systems designed for extreme environments. 🛡️\n\nContact us for specific component datasheets.",
+		answer:   fmt.Sprintf("%s specializes in ATEX-certified instruments for hazardous areas (Ex d, Ex i, etc.). We provide sensors, transmitters, and control systems designed for extreme environments. 🛡️\n\nContact us for specific component datasheets.", os.Getenv("COMPANY_NAME")),
 	},
 	{
 		keywords: []string{"pricing", "cost", "quote", "budget", "how much"},
@@ -299,10 +299,10 @@ func tryFAQMatch(input string) (string, bool) {
 // sendEngagementNudge sends a professional business introduction to convert
 // quiz interest into service inquiries.
 func sendEngagementNudge(phone string) {
-	greeting := "👋 Welcome to ASKworX.\n\n" +
+	greeting := fmt.Sprintf("👋 Welcome to %s.\n\n" +
 		"We are a Ground-to-Cloud automation company helping businesses with industrial automation, digital transformation, and smart engineering solutions.\n\n" +
 		"From PLC, SCADA, and IIoT systems to software development, CRM solutions, and digital marketing — we provide complete end-to-end solutions.\n\n" +
-		"How can we assist you today?"
+		"How can we assist you today?", os.Getenv("COMPANY_NAME"))
 
 	buttons := []Button{
 		{ID: "flow_service", Title: "🔧 Service Request"},

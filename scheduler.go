@@ -30,7 +30,7 @@ func InitScheduler() {
 		for _, e := range emps {
 			template := db.GetSetting("greeting_employee")
 			if template == "" {
-				template = "🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀"
+				template = fmt.Sprintf("🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀", os.Getenv("COMPANY_NAME"))
 			}
 			msg := strings.ReplaceAll(template, "{{name}}", e.Name)
 			sendEmployeeDashboard(e.Phone) // This will trigger the dashboard buttons
@@ -53,7 +53,7 @@ func InitScheduler() {
 
 			msg := db.GetSetting("greeting_customer")
 			if msg == "" {
-				msg = "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀"
+				msg = fmt.Sprintf("🌅 *Good Morning from %s!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀", os.Getenv("COMPANY_NAME"))
 			}
 			sendTextMessage(p, msg)
 		}
@@ -70,7 +70,7 @@ func InitScheduler() {
 
 		if count > 0 {
 			adminPhone := os.Getenv("ADMIN_PHONE")
-			msg := fmt.Sprintf("⚠️ ASKworX Alert!\nYou have [%d] new leads pending follow-up.\nLogin to dashboard to view details.", count)
+			msg := fmt.Sprintf("⚠️ %s Alert!\nYou have [%d] new leads pending follow-up.\nLogin to dashboard to view details.", os.Getenv("COMPANY_NAME"), count)
 			sendTextMessage(adminPhone, msg)
 		}
 	})
@@ -91,7 +91,7 @@ func InitScheduler() {
 				"Champion, the following priority objective requires your expertise:\n\n" +
 				"🎯 *" + r.Desc + "*\n\n" +
 				"Excellence lies in execution. Bring your best to the field today and let's continue pioneering the standard in Smart Automation! 🚀\n\n" +
-				"Regards,\n*ASKworX Team*"
+				"Regards,\n*" + os.Getenv("COMPANY_NAME") + " Team*"
 			sendFAQAnswer(r.Phone, msg)
 			db.MarkReminderSent(r.ID)
 		}
@@ -141,7 +141,7 @@ func InitScheduler() {
 
 func broadcastQuiz(camp db.Campaign, phones []string) {
 	quizBody := fmt.Sprintf(
-		"🌟 *ASKworX Industrial Insight* 🌟\n\n"+
+		"🌟 *%s Industrial Insight* 🌟\n\n"+
 			"*WEEKLY KNOWLEDGE CHALLENGE*\n\n"+
 			"❓ *QUESTION:*\n%s?\n\n"+
 			"📍 *OPTIONS:*\n"+
@@ -193,7 +193,7 @@ func broadcastPoster(camp db.Campaign, phones []string) {
 	}
 
 	premiumCaption := fmt.Sprintf(
-		"📢 *ASKworX Industrial Update* 📢\n"+
+		"📢 *%s Industrial Update* 📢\n"+
 			"──────────────────⬡\n\n"+
 			"%s\n\n"+
 			"──────────────────⬡\n"+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"askworx-whatsapp-bot/db"
@@ -127,7 +128,7 @@ func handleMessage(phone, input string, lat, lng float64) {
 		sendExpertContact(phone)
 		return
 	}
-	if text == "about" || strings.Contains(text, "about askworx") || input == "about_askworx" {
+	if text == "about" || strings.Contains(text, "about "+strings.ToLower(os.Getenv("COMPANY_NAME"))) || input == "about_askworx" {
 		sendAboutASKworX(phone)
 		return
 	}
@@ -234,11 +235,11 @@ func handleMessage(phone, input string, lat, lng float64) {
 func sendOpeningMessage(phone string) {
 	sessions[phone] = StateMain
 	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
-	body := "🏭 Welcome to ASKworX!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?"
+	body := fmt.Sprintf("🏭 Welcome to %s!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?", os.Getenv("COMPANY_NAME"))
 	buttons := []Button{
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
 		{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
-		{ID: "about_askworx", Title: "🏭 About ASKworX"},
+		{ID: "about_askworx", Title: fmt.Sprintf("🏭 About %s", os.Getenv("COMPANY_NAME"))},
 	}
 	sendImageWithButtons(phone, imageURL, body, buttons)
 }
@@ -604,7 +605,7 @@ func handleQuotePhone(phone, input string) {
 	db.UpdateContactCompany(phone, t.Company)
 
 	sessions[phone] = StateMain
-	body := fmt.Sprintf("✅ Request Received Successfully!\n🎉 Thank you %s!\n\n📋 Summary:\n👤 Name: %s\n🏢 Company: %s\n📝 Requirement: %s\n📞 Contact: %s\n\n⏰ Our expert will contact you within 24 hours with a detailed proposal.\n\nThank you for choosing ASKworX! 🙏", t.Name, t.Name, t.Company, t.Requirement, t.Phone)
+	body := fmt.Sprintf("✅ Request Received Successfully!\n🎉 Thank you %s!\n\n📋 Summary:\n👤 Name: %s\n🏢 Company: %s\n📝 Requirement: %s\n📞 Contact: %s\n\n⏰ Our expert will contact you within 24 hours with a detailed proposal.\n\nThank you for choosing %s! 🙏", t.Name, t.Name, t.Company, t.Requirement, t.Phone, os.Getenv("COMPANY_NAME"))
 	sendTextMessage(phone, body)
 
 	delete(tempQuotes, phone)
@@ -615,7 +616,7 @@ func handleQuotePhone(phone, input string) {
 func sendExpertContact(phone string) {
 	sessions[phone] = StateExpert
 	imageURL := "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800"
-	body := "📞 ASKworX Support Center\nHow can we help you today?\n\nSelect a category below to connect with the right expert."
+	body := fmt.Sprintf("📞 %s Support Center\nHow can we help you today?\n\nSelect a category below to connect with the right expert.", os.Getenv("COMPANY_NAME"))
 	buttons := []Button{
 		{ID: "service", Title: "🔧 Service Request"},
 		{ID: "quotation", Title: "📈 Request Quotation"},
@@ -677,7 +678,7 @@ func handleCallbackRequest(phone, input string) {
 
 	db.CreateCallback(phone, name, timeStr)
 	sessions[phone] = StateMain
-	body := "✅ Callback Scheduled!\nOur expert will call you at the requested time.\n\n📞 We will call from: +91 9187458714\n\nThank you for choosing ASKworX! 🙏\nType MENU anytime for assistance."
+	body := fmt.Sprintf("✅ Callback Scheduled!\nOur expert will call you at the requested time.\n\n📞 We will call from: +%s\n\nThank you for choosing %s! 🙏\nType MENU anytime for assistance.", os.Getenv("ADMIN_PHONE"), os.Getenv("COMPANY_NAME"))
 	sendTextMessage(phone, body)
 	sendOpeningMessage(phone)
 }
@@ -686,7 +687,7 @@ func handleCallbackRequest(phone, input string) {
 func sendAboutASKworX(phone string) {
 	sessions[phone] = StateAbout
 	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
-	body := "🏭 About ASKworX Smart Automation LLP\nGround to Cloud — Engineering Smart Automation\n\nAt ASKworX, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +91 9187458714\n📧 contact@askworx.in\n🌐 www.askworx.in"
+	body := fmt.Sprintf("🏭 About %s\nGround to Cloud — Engineering Smart Automation\n\nAt %s, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +%s\n📧 contact@askworx.in\n🌐 www.askworx.in", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE"))
 	buttons := []Button{
 		{ID: "our_industries", Title: "🏭 Our Industries"},
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
@@ -911,7 +912,7 @@ func sendExploreServices(phone string) {
 
 func sendFAQPrompt(phone string) {
 	sessions[phone] = StateFAQ
-	msg := "🤖 *ASKworX Support Assistant*\n\nI can answer questions about our services, location, and technical capabilities.\n\n*Go ahead, ask me anything!* (e.g., 'What is SCADA?' or 'Where is your office?')"
+	msg := fmt.Sprintf("🤖 *%s Support Assistant*\n\nI can answer questions about our services, location, and technical capabilities.\n\n*Go ahead, ask me anything!* (e.g., 'What is SCADA?' or 'Where is your office?')", os.Getenv("COMPANY_NAME"))
 	sendTextMessage(phone, msg)
 }
 

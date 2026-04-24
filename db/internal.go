@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
@@ -97,9 +98,11 @@ func CreateInternalTables() {
 
 func seedSettings() {
 	defaults := map[string]string{
-		"greeting_employee": "🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀",
-		"greeting_customer": "🌅 *Good Morning from ASKworX!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀",
-		"hub_welcome":       "*ASKworX INTERNAL HUB*\n\nWelcome back, *Champion*! 🏆\n\nAt ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\nYour expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\nReady to make an impact? Select an action below: 👇",
+		"greeting_employee": fmt.Sprintf("🌅 *Good Morning, {{name}}!* 🏆\n\nAnother day to pioneer industrial excellence. Don't forget to **Start Your Day** in the Internal Hub to log your focus objectives.\n\nLet's make an impact! 🚀"),
+		"greeting_customer": fmt.Sprintf("🌅 *Good Morning from %s!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀", os.Getenv("COMPANY_NAME")),
+		"about_company":     fmt.Sprintf("🏭 About %s", os.Getenv("COMPANY_NAME")),
+		"hub_welcome":       fmt.Sprintf("*%s INTERNAL HUB*\n\nWelcome back, *Champion*! 🏆\n\nAt %s, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\nYour expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why %s is the leader in Smart Automation. 🚀\n\nReady to make an impact? Select an action below: 👇", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME")),
+		"support_center":    fmt.Sprintf("📞 %s Support Center\nHow can we help you today?\n\nSelect a category below to connect with the right expert.", os.Getenv("COMPANY_NAME")),
 		"btn_start_day":     "🏢 START DAY",
 		"btn_end_day":       "🏢 END DAY",
 		"btn_apply_leave":   "🏝️ APPLY LEAVE",

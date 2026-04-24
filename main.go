@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -46,7 +47,7 @@ func main() {
 	// Routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte("<h1>🚀 ASKworX Bot is running!</h1><p>API is healthy at <a href='/api/leads'>/api/leads</a></p>"))
+		w.Write([]byte(fmt.Sprintf("<h1>🚀 %s Bot is running!</h1><p>API is healthy at <a href='/api/leads'>/api/leads</a></p>", os.Getenv("COMPANY_NAME"))))
 	})
 
 	r.HandleFunc("/webhook", WebhookHandler)
@@ -70,6 +71,6 @@ func main() {
 		port = "3000"
 	}
 
-	log.Printf("🚀 ASKworX Premium Bot starting on port %s...", port)
+	log.Printf("🚀 %s Premium Bot starting on port %s...", os.Getenv("COMPANY_NAME"), port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }

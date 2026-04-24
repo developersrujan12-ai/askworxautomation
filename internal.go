@@ -3,6 +3,7 @@ package main
 import (
 	"askworx-whatsapp-bot/db"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -43,7 +44,6 @@ func sendButtons(phone, text string, btns []map[string]string) {
 }
 
 const (
-	TEST_MODE_NUMBER = "918310029635"
 	MODE_TEST        = "TEST"
 )
 
@@ -99,14 +99,11 @@ func tryInternalSystem(phone, input, state string, lat, lng float64) bool {
 }
 
 func sendEmployeeDashboard(phone string) {
-	msg := db.GetSetting("hub_welcome")
-	if msg == "" {
-		msg = "*ASKworX INTERNAL HUB*\n\n" +
+	msg := fmt.Sprintf("*%s INTERNAL HUB*\n\n" +
 			"Welcome back, *Champion*! 🏆\n\n" +
-			"At ASKworX, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
-			"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why ASKworX is the leader in Smart Automation. 🚀\n\n" +
-			"Ready to make an impact? Select an action below: 👇"
-	}
+			"At %s, we aren't just building automation; we are *pioneering the future* of industrial intelligence. 🏭✨\n\n" +
+			"Your expertise today moves the needle for industries worldwide. From Ground to Cloud, let's deliver excellence and show why %s is the leader in Smart Automation. 🚀\n\n" +
+			"Ready to make an impact? Select an action below: 👇", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"))
 
 	btnStart := db.GetSetting("btn_start_day")
 	if btnStart == "" {
