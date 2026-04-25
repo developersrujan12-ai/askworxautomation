@@ -207,76 +207,6 @@ func NotifyTeam(phone, category, message string) {
 	sendTextMessage(teamNumber, notification)
 }
 
-// ─── MODULE 3: FAQ KNOWLEDGE BASE ────────────────────────────────────────────
-
-type faqEntry struct {
-	keywords []string
-	answer   string
-}
-
-var faqKnowledgeBase = []faqEntry{
-	{
-		keywords: []string{"what do you do", "what is askworx", "who are you", "about askworx"},
-		answer:   fmt.Sprintf("%s provides end-to-end industrial automation — PLC & SCADA engineering, IIoT, cloud analytics, robotics, and digital software. 🏭\n\n🌐 www.askworx.in | 📞 +%s", os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE")),
-	},
-	{
-		keywords: []string{"plc", "programmable logic controller"},
-		answer:   "We design & commission complete PLC systems — Micro PLCs, Motion Controllers, VFDs, Safety PLCs, and AC Servo Drives for Automotive, Pharma, Food & Beverage, and more. ⚡",
-	},
-	{
-		keywords: []string{"scada", "hmi", "supervisory control"},
-		answer:   "We develop full SCADA & HMI systems with real-time monitoring, alarming, historical trending, and multi-site remote access using platforms like MC Works64. 🖥️",
-	},
-	{
-		keywords: []string{"robot", "robotics", "cobot", "collaborative robot"},
-		answer:   "We integrate industrial robots and cobots for welding, assembly, pick & place, and palletizing with full commissioning & after-sales support. 🤖",
-	},
-	{
-		keywords: []string{"iiot", "industrial iot", "iot gateway", "mqtt", "opc-ua", "modbus"},
-		answer:   "Our IIoT solutions connect your machines to the cloud via OPC-UA, Modbus, and MQTT with secure edge computing and real-time dashboards. ☁️",
-	},
-	{
-		keywords: []string{"atex", "hazardous area", "explosion proof"},
-		answer:   fmt.Sprintf("We supply and support ATEX-certified instruments for hazardous area classifications. Contact our team for specific product recommendations. 🔒\n\n📞 +%s", os.Getenv("ADMIN_PHONE")),
-	},
-	{
-		keywords: []string{"price", "pricing", "cost", "how much", "quote", "quotation"},
-		answer:   "Our pricing is tailored to your project scope. We deliver a detailed proposal within 24 hours. 💬",
-	},
-	{
-		keywords: []string{"contact", "phone number", "email", "address", "office", "location"},
-		answer:   fmt.Sprintf("📞 +%s\n📧 contact@askworx.in\n🌐 www.askworx.in\n📍 1381, 6th Main Road, RR Nagar, Bangalore — 560098", os.Getenv("ADMIN_PHONE")),
-	},
-	{
-		keywords: []string{"whatsapp bot", "chatbot", "wa bot", "automation bot"},
-		answer:   "We build AI-powered WhatsApp Business bots with CRM integration, lead capture, broadcast scheduling, and a multi-agent admin dashboard. 📱",
-	},
-	{
-		keywords: []string{"website", "web app", "mobile app", "app development", "flutter", "react"},
-		answer:   "We build Progressive Web Apps, mobile apps (Flutter/React Native), corporate sites, and enterprise ERP/MES software. 🌐",
-	},
-	{
-		keywords: []string{"thanks", "thank you", "ty", "thx", "appreciate"},
-		answer:   "You're very welcome! 🙏 Let me know if there's anything else I can help you with.",
-	},
-	{
-		keywords: []string{"okay", "ok", "fine", "got it", "cool", "sure"},
-		answer:   "Great! 👍 Let me know if you'd like to explore our solutions again.",
-	},
-	{
-		keywords: []string{"seo", "digital marketing", "google ads", "linkedin", "social media"},
-		answer:   "We offer data-driven SEO, Google Ads (PPC), LinkedIn B2B lead generation, and social media branding to drive high-intent traffic and paying customers. 📈",
-	},
-	{
-		keywords: []string{"atex", "instruments", "hazardous", "explosion proof", "sensor"},
-		answer:   fmt.Sprintf("%s specializes in ATEX-certified instruments for hazardous areas (Ex d, Ex i, etc.). We provide sensors, transmitters, and control systems designed for extreme environments. 🛡️\n\nContact us for specific component datasheets.", os.Getenv("COMPANY_NAME")),
-	},
-	{
-		keywords: []string{"pricing", "cost", "quote", "budget", "how much"},
-		answer:   "Our pricing approach is project-based to ensure you only pay for what you need. We provide a detailed technical & commercial proposal within 24 hours of requirement analysis. 💰\n\nSelect *Get Free Quote* from the menu to start.",
-	},
-}
-
 // tryFAQMatch returns (answer, isConfident)
 func tryFAQMatch(input string) (string, bool) {
 	lower := strings.ToLower(input)
@@ -286,15 +216,24 @@ func tryFAQMatch(input string) (string, bool) {
 		return "", false
 	}
 
-	for _, entry := range faqKnowledgeBase {
-		for _, kw := range entry.keywords {
-			if strings.Contains(lower, kw) {
-				return entry.answer, true
+	faqs, err := db.GetAllFAQs()
+	if err != nil {
+		log.Printf("[FAQ] DB error: %v", err)
+		return "", false
+	}
+
+	for _, entry := range faqs {
+		keywords := strings.Split(entry.Keywords, ",")
+		for _, kw := range keywords {
+			kw = strings.TrimSpace(kw)
+			if kw != "" && strings.Contains(lower, strings.ToLower(kw)) {
+				return entry.Answer, true
 			}
 		}
 	}
 	return "", false
 }
+
 
 // sendEngagementNudge sends a professional business introduction to convert
 // quiz interest into service inquiries.

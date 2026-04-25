@@ -395,9 +395,43 @@ func AdminRoutes() chi.Router {
 	r.Post("/settings", func(w http.ResponseWriter, r *http.Request) {
 		var payload map[string]string
 		json.NewDecoder(r.Body).Decode(&payload)
-
 		for k, v := range payload {
 			db.UpdateSetting(k, v)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// ── FAQ / KNOWLEDGE BASE ──────────────────────────────────────────────
+	r.Get("/faqs", func(w http.ResponseWriter, r *http.Request) {
+		faqs, err := db.GetAllFAQs()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(faqs)
+	})
+
+	r.Post("/faqs", func(w http.ResponseWriter, r *http.Request) {
+		var f db.FAQ
+		if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := db.SaveFAQ(f); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Delete("/faqs/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+		if err := db.DeleteFAQ(id); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 	})

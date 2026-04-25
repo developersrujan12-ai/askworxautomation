@@ -234,8 +234,16 @@ func handleMessage(phone, input string, lat, lng float64) {
 // --- FLOW: OPENING ---
 func sendOpeningMessage(phone string) {
 	sessions[phone] = StateMain
-	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
-	body := fmt.Sprintf("🏭 Welcome to %s!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?", os.Getenv("COMPANY_NAME"))
+	imageURL := db.GetSetting("content_welcome_image")
+	if imageURL == "" {
+		imageURL = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
+	}
+	body := db.GetSetting("content_welcome_body")
+	if body == "" {
+		body = fmt.Sprintf("🏭 Welcome to %s!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?", os.Getenv("COMPANY_NAME"))
+	}
+	body = strings.ReplaceAll(body, "{{company}}", os.Getenv("COMPANY_NAME"))
+	
 	buttons := []Button{
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
 		{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
@@ -297,8 +305,14 @@ func handleSolutionsFlow(phone, text string) {
 // --- FLOW: INDUSTRIAL ---
 func sendIndustrialMenu(phone string) {
 	sessions[phone] = StateIndustrial
-	imageURL := "https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=800"
-	body := "⚙️ Industrial Automation\nThe Foundation: Total Control at Machine Level\n\nWe design, build, and commission high-reliability automation systems engineered for continuous 24/7 industrial operations. Our experts specialize in creating seamless machine-level interfaces that maximize uptime.\n\n🔹 End-to-End System Design\n🔹 Retrofitting & Upgrades\n🔹 Machine Monitoring\n🔹 High-Performance Algorithms\n🔹 Safety-First Engineering\n\nSelect a service to learn more:"
+	imageURL := db.GetSetting("content_industrial_image")
+	if imageURL == "" {
+		imageURL = "https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=800"
+	}
+	body := db.GetSetting("content_industrial_body")
+	if body == "" {
+		body = "⚙️ Industrial Automation\nThe Foundation: Total Control at Machine Level\n\nWe design, build, and commission high-reliability automation systems engineered for continuous 24/7 industrial operations. Our experts specialize in creating seamless machine-level interfaces that maximize uptime.\n\n🔹 End-to-End System Design\n🔹 Retrofitting & Upgrades\n🔹 Machine Monitoring\n🔹 High-Performance Algorithms\n🔹 Safety-First Engineering\n\nSelect a service to learn more:"
+	}
 	buttons := []Button{
 		{ID: "plc_control", Title: "⚡ PLC & Control"},
 		{ID: "scada_hmi", Title: "🖥️ SCADA & HMI"},
@@ -390,8 +404,14 @@ func handleSubIndustrialFlow(phone, text string) {
 // --- FLOW: SOFTWARE ---
 func sendSoftwareMenu(phone string) {
 	sessions[phone] = StateSoftware
-	imageURL := "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800"
-	body := "💻 Digital & Software Solutions\nBridging traditional automation with modern digital thinking to scale your business.\n\nFrom automated customer engagement to full-scale enterprise software, we engineer tools that drive growth."
+	imageURL := db.GetSetting("content_software_image")
+	if imageURL == "" {
+		imageURL = "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800"
+	}
+	body := db.GetSetting("content_software_body")
+	if body == "" {
+		body = "💻 Digital & Software Solutions\nBridging traditional automation with modern digital thinking to scale your business.\n\nFrom automated customer engagement to full-scale enterprise software, we engineer tools that drive growth."
+	}
 	buttons := []Button{
 		{ID: "software_solutions", Title: "💻 Software Solutions"},
 		{ID: "seo_marketing", Title: "📈 SEO & Marketing"},
@@ -497,8 +517,14 @@ func handleSubSoftwareFlow(phone, text string) {
 // --- FLOW: IIoT ---
 func sendIIoTMenu(phone string) {
 	sessions[phone] = StateIIoT
-	imageURL := "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800"
-	body := "📊 IIoT & Analytics Solutions\nConnecting your plant to the cloud.\n\nSelect a service:"
+	imageURL := db.GetSetting("content_iiot_image")
+	if imageURL == "" {
+		imageURL = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800"
+	}
+	body := db.GetSetting("content_iiot_body")
+	if body == "" {
+		body = "📊 IIoT & Analytics Solutions\nConnecting your plant to the cloud.\n\nSelect a service:"
+	}
 	buttons := []Button{
 		{ID: "iiot_gateway", Title: "🌐 IIoT Gateway"},
 		{ID: "cloud_analytics", Title: "☁️ Cloud Analytics"},

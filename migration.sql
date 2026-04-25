@@ -37,6 +37,27 @@ CREATE TABLE IF NOT EXISTS messages_log (
     sent_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS campaigns (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR NOT NULL,           -- 'quiz' or 'poster'
+    -- Quiz fields
+    question TEXT,
+    option_a VARCHAR(255),
+    option_b VARCHAR(255),
+    option_c VARCHAR(255),
+    correct_answer CHAR(1),
+    explanation TEXT,
+    youtube_link VARCHAR(255),
+    -- Poster fields
+    image_url VARCHAR(255),
+    caption TEXT,
+    -- Scheduling & state
+    scheduled_at TIMESTAMP NOT NULL,
+    status VARCHAR DEFAULT 'scheduled', -- scheduled | sent | cancelled
+    total_sent INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS quizzes (
     id SERIAL PRIMARY KEY,
     campaign_id INT REFERENCES campaigns(id),
@@ -60,7 +81,6 @@ CREATE TABLE IF NOT EXISTS quiz_responses (
     responded_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(quiz_id, phone)
 );
-
 CREATE TABLE IF NOT EXISTS customer_queries (
     id SERIAL PRIMARY KEY,
     phone VARCHAR,
@@ -71,23 +91,9 @@ CREATE TABLE IF NOT EXISTS customer_queries (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS campaigns (
+CREATE TABLE IF NOT EXISTS faqs (
     id SERIAL PRIMARY KEY,
-    type VARCHAR NOT NULL,           -- 'quiz' or 'poster'
-    -- Quiz fields
-    question TEXT,
-    option_a VARCHAR(255),
-    option_b VARCHAR(255),
-    option_c VARCHAR(255),
-    correct_answer CHAR(1),
-    explanation TEXT,
-    youtube_link VARCHAR(255),
-    -- Poster fields
-    image_url VARCHAR(255),
-    caption TEXT,
-    -- Scheduling & state
-    scheduled_at TIMESTAMP NOT NULL,
-    status VARCHAR DEFAULT 'scheduled', -- scheduled | sent | cancelled
-    total_sent INT DEFAULT 0,
+    keywords TEXT NOT NULL,          -- comma separated keywords
+    answer TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );

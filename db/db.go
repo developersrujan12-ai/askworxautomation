@@ -51,5 +51,15 @@ func InitDB() error {
 		)
 	`)
 
+	// Create faqs table
+	Pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS faqs (
+			id SERIAL PRIMARY KEY,
+			keywords TEXT NOT NULL,
+			answer TEXT NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+
 	return Pool.Ping(context.Background())
 }
