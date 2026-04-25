@@ -712,8 +712,15 @@ func handleCallbackRequest(phone, input string) {
 // --- FLOW: ABOUT / INDUSTRIES ---
 func sendAboutASKworX(phone string) {
 	sessions[phone] = StateAbout
-	imageURL := "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
-	body := fmt.Sprintf("🏭 About %s\nGround to Cloud — Engineering Smart Automation\n\nAt %s, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +%s\n📧 contact@askworx.in\n🌐 www.askworx.in", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE"))
+	imageURL := db.GetSetting("content_welcome_image") // Reuse the welcome image or add a new one
+	if imageURL == "" {
+		imageURL = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800"
+	}
+	body := db.GetSetting("about_company")
+	if body == "" {
+		body = fmt.Sprintf("🏭 About %s\nGround to Cloud — Engineering Smart Automation\n\nAt %s, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +%s\n📧 contact@askworx.in\n🌐 www.askworx.in", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE"))
+	}
+	
 	buttons := []Button{
 		{ID: "our_industries", Title: "🏭 Our Industries"},
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
