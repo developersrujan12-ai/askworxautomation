@@ -53,9 +53,16 @@ func InitScheduler() {
 
 			msg := db.GetSetting("greeting_customer")
 			if msg == "" {
-				msg = fmt.Sprintf("🌅 *Good Morning from %s!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away.\n\nType *MENU* anytime to explore our solutions! 🚀", os.Getenv("COMPANY_NAME"))
+				msg = fmt.Sprintf("🌅 *Good Morning from %s!* 🏭\n\nWe hope you have a productive day ahead. If you need any assistance with Industrial Automation, IIoT, or Software solutions, we are just a message away. 🚀", os.Getenv("COMPANY_NAME"))
 			}
-			sendTextMessage(p, msg)
+			// Clean up legacy "Type MENU" text if it exists in DB setting
+			msg = strings.ReplaceAll(msg, "\n\nType *MENU* anytime to explore our solutions!", "")
+			msg = strings.ReplaceAll(msg, "Type *MENU* anytime to explore our solutions!", "")
+
+			buttons := []Button{
+				{ID: "main_menu", Title: "🏠 Explore Menu"},
+			}
+			sendInteractiveButtons(p, msg, buttons)
 		}
 	})
 

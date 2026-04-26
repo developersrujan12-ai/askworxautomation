@@ -56,9 +56,9 @@ const (
 	StateLeadServiceTime     SessionState = "lead_service_time"
 
 	// Internal System states
-	StateInternalWorkPlan  SessionState = "internal_work_plan"
-	StateInternalEODReport SessionState = "internal_eod_report"
-	StateInternalLeaveDate SessionState = "internal_leave_date"
+	StateInternalWorkPlan    SessionState = "internal_work_plan"
+	StateInternalEODReport   SessionState = "internal_eod_report"
+	StateInternalLeaveDate   SessionState = "internal_leave_date"
 	StateInternalLeaveReason SessionState = "internal_leave_reason"
 )
 
@@ -100,7 +100,7 @@ func handleMessage(phone, input string, lat, lng float64) {
 	if isEmp {
 		// Log internal message for dashboard history
 		db.SaveMessageHistory(phone, text, "inbound")
-		
+
 		// Map total menu resets to the Internal Hub only
 		if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || input == "main_menu" {
 			sendEmployeeDashboard(phone)
@@ -243,7 +243,7 @@ func sendOpeningMessage(phone string) {
 		body = fmt.Sprintf("🏭 Welcome to %s!\nGround to Cloud — Engineering Smart Automation\n\nWe help manufacturers move from shop-floor control to cloud-connected intelligence.\n\n🎯 Trusted by industries across India\n⚡ 24/7 Automation Support\n🌐 www.askworx.in\n\nHow can we assist you today?", os.Getenv("COMPANY_NAME"))
 	}
 	body = strings.ReplaceAll(body, "{{company}}", os.Getenv("COMPANY_NAME"))
-	
+
 	buttons := []Button{
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
 		{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
@@ -253,8 +253,13 @@ func sendOpeningMessage(phone string) {
 }
 
 func sendHelpMessage(phone string) {
-	msg := "Available Commands:\n- HI/MENU: Main Menu\n- HELP: This list\n- SERVICES: Our Solutions\n- CONTACT: Talk to Expert\n- ABOUT: About Us\n- INDUSTRIES: Industry Experience"
-	sendTextMessage(phone, msg)
+	msg := "🤖 *ASKworX Support Assistant*\n\nHow can I help you today? You can use the buttons below to navigate or type your query directly."
+	buttons := []Button{
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+		{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
+		{ID: "our_solutions", Title: "🔧 Our Solutions"},
+	}
+	sendInteractiveButtons(phone, msg, buttons)
 }
 
 func handleMainFlow(phone, text string) {
@@ -704,8 +709,11 @@ func handleCallbackRequest(phone, input string) {
 
 	db.CreateCallback(phone, name, timeStr)
 	sessions[phone] = StateMain
-	body := fmt.Sprintf("✅ Callback Scheduled!\nOur expert will call you at the requested time.\n\n📞 We will call from: +%s\n\nThank you for choosing %s! 🙏\nType MENU anytime for assistance.", os.Getenv("ADMIN_PHONE"), os.Getenv("COMPANY_NAME"))
-	sendTextMessage(phone, body)
+	body := fmt.Sprintf("✅ Callback Scheduled!\nOur expert will call you at the requested time.\n\n📞 We will call from: +%s\n\nThank you for choosing %s! 🙏", os.Getenv("ADMIN_PHONE"), os.Getenv("COMPANY_NAME"))
+	buttons := []Button{
+		{ID: "main_menu", Title: "🏠 Main Menu"},
+	}
+	sendInteractiveButtons(phone, body, buttons)
 	sendOpeningMessage(phone)
 }
 
@@ -720,7 +728,7 @@ func sendAboutASKworX(phone string) {
 	if body == "" {
 		body = fmt.Sprintf("🏭 About %s\nGround to Cloud — Engineering Smart Automation\n\nAt %s, we bridge the gap between shop-floor machinery and cloud-connected intelligence. We provide high-reliability solutions for modern manufacturing.\n\n🛠 Our Solutions:\n✅ PLC & SCADA Engineering\n✅ Control Panel Design\n✅ Industrial Networking\n✅ Robotics & Motion Control\n✅ IIoT & Cloud Integration\n✅ Data Visualization\n\n⚲ Office Address:\n1381, 6th Main Road, 1st Phase, BEML Layout, 5th Stage, RR Nagar, Bangalore, Karnataka - 560098.\n\n📞 Contact Detail:\n☎︎ +%s\n📧 contact@askworx.in\n🌐 www.askworx.in", os.Getenv("COMPANY_NAME"), os.Getenv("COMPANY_NAME"), os.Getenv("ADMIN_PHONE"))
 	}
-	
+
 	buttons := []Button{
 		{ID: "our_industries", Title: "🏭 Our Industries"},
 		{ID: "our_solutions", Title: "🔧 Our Solutions"},
@@ -957,7 +965,7 @@ func handleFAQFlow(phone, input string) {
 		sessions[phone] = StateMain // Reset to main after a successful FAQ match
 		return
 	}
-	
+
 	// Only trigger support flow for messages longer than 3 chars (prevents "okay", "what" spam)
 	if len(strings.TrimSpace(input)) > 3 {
 		sendTextMessage(phone, "Let me connect you with our team for this.")
