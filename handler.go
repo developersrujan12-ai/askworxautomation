@@ -118,6 +118,18 @@ func handleMessage(phone, input string, lat, lng float64) {
 		sendOpeningMessage(phone)
 		return
 	}
+
+	// Gratitude / Thank You Handler
+	if text == "thanks" || text == "thank you" || text == "thx" || text == "tq" || 
+		text == "tha k you" || text == "thk you" || text == "thankyou" || text == "great thanks" {
+		msg := fmt.Sprintf("🙏 You're most welcome! I'm glad I could assist you.\n\nI think you are satisfied with the information. If you need *urgent contact*, please reach out to our team directly at:\n\n📞 *+%s*\n\nHave a wonderful day! 😊", os.Getenv("ADMIN_PHONE"))
+		buttons := []Button{
+			{ID: "main_menu", Title: "🏠 Main Menu"},
+			{ID: "talk_to_expert", Title: "📞 Talk to Expert"},
+		}
+		sendInteractiveButtons(phone, msg, buttons)
+		return
+	}
 	if text == "help" {
 		sendHelpMessage(phone)
 		return
