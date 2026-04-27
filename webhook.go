@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type WebhookRequest struct {
@@ -35,6 +36,14 @@ type WebhookRequest struct {
 						Latitude  float64 `json:"latitude"`
 						Longitude float64 `json:"longitude"`
 					} `json:"location,omitempty"`
+					Image *struct {
+						ID      string `json:"id"`
+						Caption string `json:"caption"`
+					} `json:"image,omitempty"`
+					Document *struct {
+						ID       string `json:"id"`
+						Filename string `json:"filename"`
+					} `json:"document,omitempty"`
 				} `json:"messages"`
 			} `json:"value"`
 		} `json:"changes"`
@@ -83,10 +92,22 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 						lat = msg.Location.Latitude
 						lng = msg.Location.Longitude
 						text = "LOCATION_DATA"
+					} else if msg.Type == "image" && msg.Image != nil {
+						text = "[IMAGE_RECEIVED]"
+						if msg.Image.Caption != "" {
+							text += ": " + msg.Image.Caption
+						}
+					} else if msg.Type == "document" && msg.Document != nil {
+						text = "[DOCUMENT_RECEIVED]"
+						if msg.Document.Filename != "" {
+							text += ": " + msg.Document.Filename
+						}
 					} else if msg.Text != nil {
 						text = msg.Text.Body
 					} else if msg.Interactive != nil {
 						text = msg.Interactive.ButtonReply.ID
+					} else {
+						text = "[" + strings.ToUpper(msg.Type) + "_RECEIVED]"
 					}
 
 					if text != "" {

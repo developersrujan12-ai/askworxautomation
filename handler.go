@@ -86,7 +86,6 @@ var tempCallbacks = map[string]string{}
 
 func handleMessage(phone, input string, lat, lng float64) {
 	text := strings.ToLower(strings.TrimSpace(input))
-	db.LogMessage(phone, "incoming", input)
 	db.SaveContact(phone)
 
 	// --- Module 4: Internal Team System (Priority 0) ---
