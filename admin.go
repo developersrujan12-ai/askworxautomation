@@ -19,6 +19,9 @@ import (
 func AdminRoutes() chi.Router {
 	r := chi.NewRouter()
 
+	r.Use(AuthMiddleware)
+
+
 	// ── STATIC FILE SERVING FOR UPLOADS ──────────────────────────────────────
 	uploadDir := "./uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
@@ -26,7 +29,7 @@ func AdminRoutes() chi.Router {
 	}
 	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadDir))))
 
-	r.Post("/api/upload", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseMultipartForm(10 << 20) // 10MB max
 		file, handler, err := r.FormFile("file")
 		if err != nil {
@@ -457,8 +460,51 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&body)
 
 	if body.Password == os.Getenv("ADMIN_PASSWORD") {
-		json.NewEncoder(w).Encode(map[string]string{"token": "dummy-token-askworx"})
+		secret := os.Getenv("API_SECRET")
+		if secret == "" {
+			secret = "dummy-token-askworx"
+		}
+		json.NewEncoder(w).Encode(map[string]string{"token": secret})
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
+}
+
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip auth for login and public uploads
+		// Note: chi might have different paths depending on where it's mounted
+		path := r.URL.Path
+		if path == "/api/login" || path == "/login" || 
+		   strings.HasPrefix(path, "/uploads") || 
+		   strings.HasPrefix(path, "/api/uploads") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			return
+		}
+
+		token := parts[1]
+		secret := os.Getenv("API_SECRET")
+		if secret == "" {
+			secret = "dummy-token-askworx"
+		}
+
+		if token != secret {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
