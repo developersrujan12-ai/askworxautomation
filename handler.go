@@ -101,7 +101,8 @@ func handleMessage(phone, input string, lat, lng float64) {
 		db.SaveMessageHistory(phone, text, "inbound")
 
 		// Map total menu resets to the Internal Hub only
-		if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || input == "main_menu" {
+		if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || input == "main_menu" ||
+			strings.Contains(text, "need assistance with your industrial platform") {
 			sendEmployeeDashboard(phone)
 		} else {
 			// If not handled by tryInternalSystem and not a menu reset, show menu
@@ -111,7 +112,9 @@ func handleMessage(phone, input string, lat, lng float64) {
 	}
 
 	// ── Priority 1: Global Command Overrides ─────────────────────────────────
-	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || strings.Contains(text, "main menu") || input == "main_menu" {
+	if text == "hi" || text == "hello" || text == "hey" || text == "start" || text == "menu" || 
+		strings.Contains(text, "main menu") || input == "main_menu" || 
+		strings.Contains(text, "need assistance with your industrial platform") {
 		sendOpeningMessage(phone)
 		return
 	}
@@ -276,7 +279,7 @@ func handleMainFlow(phone, text string) {
 	case "explore":
 		sendExploreServices(phone)
 	default:
-		sendOpeningMessage(phone)
+		StartQueryFlow(phone, text)
 	}
 }
 
