@@ -78,8 +78,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 			for _, change := range entry.Changes {
 				// 1. Save contact names from profile
 				for _, contact := range change.Value.Contacts {
-					db.SaveContact(contact.WaID)
-					db.UpdateContactName(contact.WaID, contact.Profile.Name)
+					db.SaveContact(contact.WaID, contact.Profile.Name)
 				}
 
 				// 2. Process messages

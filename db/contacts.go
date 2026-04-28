@@ -5,10 +5,17 @@ import (
 	"time"
 )
 
-func SaveContact(phone string) error {
+func SaveContact(phone string, name string) error {
 	_, err := Pool.Exec(context.Background(), 
-		"INSERT INTO contacts (phone) VALUES ($1) ON CONFLICT (phone) DO NOTHING", 
-		phone)
+		"INSERT INTO contacts (phone, name) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET name = EXCLUDED.name WHERE contacts.name IS NULL OR contacts.name = ''", 
+		phone, name)
+	return err
+}
+
+func UpsertContact(phone, name string) error {
+	_, err := Pool.Exec(context.Background(), 
+		"INSERT INTO contacts (phone, name) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET name = EXCLUDED.name", 
+		phone, name)
 	return err
 }
 

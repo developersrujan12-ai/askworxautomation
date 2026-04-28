@@ -128,6 +128,22 @@ func AdminRoutes() chi.Router {
 		contacts, _ := db.GetAllContacts()
 		json.NewEncoder(w).Encode(contacts)
 	})
+	
+	r.Post("/contacts", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Phone string `json:"phone"`
+			Name  string `json:"name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := db.UpsertContact(body.Phone, body.Name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
 
 	r.Get("/messages", func(w http.ResponseWriter, r *http.Request) {
 		messages, _ := db.GetAllMessages()
