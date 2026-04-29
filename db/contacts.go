@@ -26,6 +26,13 @@ func UpdateContactName(phone, name string) error {
 	return err
 }
 
+func DeleteContact(id int) error {
+	_, err := Pool.Exec(context.Background(), 
+		"DELETE FROM contacts WHERE id = $1", 
+		id)
+	return err
+}
+
 func UpdateContactCompany(phone, company string) error {
 	_, err := Pool.Exec(context.Background(), 
 		"UPDATE contacts SET company = $1 WHERE phone = $2", 

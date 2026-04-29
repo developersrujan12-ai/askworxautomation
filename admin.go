@@ -145,6 +145,17 @@ func AdminRoutes() chi.Router {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	r.Delete("/contacts/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+		var id int
+		fmt.Sscanf(idStr, "%d", &id)
+		if err := db.DeleteContact(id); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.Get("/messages", func(w http.ResponseWriter, r *http.Request) {
 		messages, _ := db.GetAllMessages()
 		json.NewEncoder(w).Encode(messages)
