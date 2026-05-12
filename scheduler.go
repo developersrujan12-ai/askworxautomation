@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/robfig/cron/v3"
 )
